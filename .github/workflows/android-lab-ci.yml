@@ -5,19 +5,23 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch pinned llama.cpp
+        run: bash scripts/bootstrap-llama-android.sh
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+      - name: Install Android native toolchain
+        run: sdkmanager "platforms;android-36" "ndk;29.0.13113456" "cmake;3.31.6"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
       - name: Build debug APK
-        run: gradle :android-lab:assembleDebug
+        run: gradle :android-lab:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: HistoriasVivas-Lab-debug
