@@ -2,6 +2,7 @@ package com.historiasvivas.engine.model
 
 import kotlinx.serialization.Serializable
 import com.historiasvivas.engine.character.CharacterMind
+import com.historiasvivas.engine.offscreen.HiddenEvent
 
 @Serializable
 enum class StoryStatus { ACTIVE, ENDING, FINISHED }
@@ -25,6 +26,7 @@ data class WorldState(
     val secrets: List<Secret> = emptyList(),
     val pendingConsequences: List<Consequence> = emptyList(),
     val facts: Set<String> = emptySet(),
+    val hiddenEvents: List<HiddenEvent> = emptyList(),
     val worldClock: Long = 0
 )
 
