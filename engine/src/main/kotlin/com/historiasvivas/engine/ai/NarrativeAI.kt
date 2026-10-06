@@ -1,10 +1,16 @@
 package com.historiasvivas.engine.ai
+import com.historiasvivas.engine.context.NarrativeContext
+import com.historiasvivas.engine.model.*
 
-import com.historiasvivas.engine.model.Story
-
-data class NarrativeRequest(val story: Story, val userAction: String)
-data class NarrativeResponse(val prose: String, val proposedFacts: Set<String> = emptySet())
-
-interface NarrativeAI {
-    suspend fun continueStory(request: NarrativeRequest): NarrativeResponse
-}
+data class NarrativeRequest(val story:Story,val userAction:String,val context:NarrativeContext)
+data class NarrativeResponse(
+ val prose:String,
+ val eventSummary:String,
+ val participantIds:Set<String> = emptySet(),
+ val tags:Set<String> = emptySet(),
+ val canonical:Boolean = false,
+ val proposedFacts:Set<String> = emptySet(),
+ val proposedConsequences:List<Consequence> = emptyList(),
+ val resolvedConsequenceIds:Set<String> = emptySet()
+)
+interface NarrativeAI { suspend fun continueStory(request:NarrativeRequest):NarrativeResponse }
