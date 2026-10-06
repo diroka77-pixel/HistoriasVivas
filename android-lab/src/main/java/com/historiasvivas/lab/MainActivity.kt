@@ -32,13 +32,14 @@ class MainActivity:AppCompatActivity(){
   contentResolver.openInputStream(uri)?.use{input->FileOutputStream(file).use{input.copyTo(it)}}?:return@withContext
   val started=System.currentTimeMillis();withContext(Dispatchers.Main){status.text="Cargando narrador local…"};engine.loadModel(file.path)
   val ai=LocalNarrativeAI("daniel",LlamaCppNarrativeRuntime(engine))
-  session=StorySession(RuinsScenario.create(),ai)
-  withContext(Dispatchers.Main){status.text="Narrador local preparado · sin conexión";metrics.text="Carga: "+(System.currentTimeMillis()-started)+" ms";storyText.text="Nadir despierta bajo un cielo desconocido. ¿Qué hace o dice Daniel?";send.isEnabled=true}
+  val saveFile=File(filesDir,"nadir-story.json")
+  session=if(saveFile.exists()) StorySession.resume(saveFile.readText(),ai) else StorySession(RuinsScenario.create(),ai)
+  withContext(Dispatchers.Main){status.text="Narrador local preparado · sin conexión";metrics.text="Carga: "+(System.currentTimeMillis()-started)+" ms";storyText.text=if((session?.story?.turn?:0L)>0) "Nadir reanudado · turno "+session!!.story.turn+". ¿Qué hace o dice Daniel?" else "Nadir despierta bajo un cielo desconocido. ¿Qué hace o dice Daniel?";send.isEnabled=true}
  }
  private fun playTurn(){val current=session?:return;val userAction=action.text.toString().trim();if(userAction.isEmpty())return
   action.text.clear();send.isEnabled=false;val started=System.currentTimeMillis()
   lifecycleScope.launch(Dispatchers.Default){
-   try{val turn=current.act(userAction);withContext(Dispatchers.Main){storyText.text=turn.prose;metrics.text="Turno "+turn.story.turn+" · "+(System.currentTimeMillis()-started)+" ms"}}
+   try{val turn=current.act(userAction);File(filesDir,"nadir-story.json").writeText(current.save());withContext(Dispatchers.Main){storyText.text=turn.prose;metrics.text="Turno "+turn.story.turn+" · guardado · "+(System.currentTimeMillis()-started)+" ms"}}
    catch(t:Throwable){withContext(Dispatchers.Main){storyText.text="Error local: "+(t.message?:"desconocido")}}
    finally{withContext(Dispatchers.Main){send.isEnabled=true}}
   }
