@@ -20,7 +20,10 @@ class TurnEngine(
    summary=response.eventSummary.ifBlank{userAction.take(240)},
    participants=response.participantIds,tags=response.tags,permanent=response.canonical
   )
-  val delta=WorldDelta(event,response.proposedFacts,response.proposedConsequences,response.resolvedConsequenceIds)
+  val delta=WorldDelta(
+   event,response.proposedFacts,response.proposedConsequences,response.resolvedConsequenceIds,
+   response.proposedMindDeltas,response.proposedPerceptionDeltas
+  )
   val validation=validator.validate(story,delta)
   require(validation.accepted){"AI proposed an inconsistent world delta: "+validation.issues.joinToString{it.code}}
   return TurnResult(reducer.apply(story,delta),response.prose,delta)
