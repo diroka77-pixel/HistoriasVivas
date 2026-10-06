@@ -1,5 +1,4 @@
 package com.historiasvivas.lab
-
 import android.net.Uri
 import android.os.Bundle
 import android.widget.*
@@ -8,65 +7,40 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.arm.aichat.AiChat
 import com.arm.aichat.InferenceEngine
+import com.historiasvivas.engine.ai.local.LocalNarrativeAI
+import com.historiasvivas.engine.scenario.RuinsScenario
+import com.historiasvivas.engine.session.StorySession
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
 class MainActivity:AppCompatActivity(){
- private lateinit var status:TextView
- private lateinit var story:TextView
- private lateinit var metrics:TextView
- private lateinit var action:EditText
- private lateinit var send:Button
- private lateinit var engine:InferenceEngine
- private var ready=false
-
- private val selectModel=registerForActivityResult(ActivityResultContracts.OpenDocument()){uri->
-  if(uri!=null) lifecycleScope.launch{prepareModel(uri)}
- }
-
- override fun onCreate(savedInstanceState:Bundle?){
-  super.onCreate(savedInstanceState);setContentView(R.layout.activity_main)
-  status=findViewById(R.id.modelStatus);story=findViewById(R.id.storyText)
-  metrics=findViewById(R.id.metrics);action=findViewById(R.id.actionText);send=findViewById(R.id.sendAction)
+ private lateinit var status:TextView; private lateinit var storyText:TextView; private lateinit var metrics:TextView
+ private lateinit var action:EditText; private lateinit var send:Button; private lateinit var engine:InferenceEngine
+ private var session:StorySession?=null
+ private val selectModel=registerForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)lifecycleScope.launch{prepareModel(uri)}}
+ override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContentView(R.layout.activity_main)
+  status=findViewById(R.id.modelStatus);storyText=findViewById(R.id.storyText);metrics=findViewById(R.id.metrics);action=findViewById(R.id.actionText);send=findViewById(R.id.sendAction)
   lifecycleScope.launch(Dispatchers.Default){engine=AiChat.getInferenceEngine(applicationContext)}
-  findViewById<Button>(R.id.selectModel).setOnClickListener{selectModel.launch(arrayOf("*/*"))}
-  send.setOnClickListener{generate()}
+  findViewById<Button>(R.id.selectModel).setOnClickListener{selectModel.launch(arrayOf("*/*"))};send.setOnClickListener{playTurn()}
  }
-
  private suspend fun prepareModel(uri:Uri)=withContext(Dispatchers.IO){
   withContext(Dispatchers.Main){status.text="Copiando modelo local…";send.isEnabled=false}
-  val dir=File(filesDir,"models").apply{mkdirs()}
-  val file=File(dir,"narrator.gguf")
-  contentResolver.openInputStream(uri)?.use{input->FileOutputStream(file).use{out->input.copyTo(out)}} ?: return@withContext
-  val started=System.currentTimeMillis()
-  withContext(Dispatchers.Main){status.text="Cargando Qwen local…"}
-  engine.loadModel(file.path)
-  val elapsed=System.currentTimeMillis()-started
-  withContext(Dispatchers.Main){
-   ready=true;status.text="Modelo local preparado · sin conexión"
-   metrics.text="Carga: "+elapsed+" ms";send.isEnabled=true
-   story.text="Las ruinas de Nadir esperan. Escribe libremente qué hace o dice Daniel."
-  }
+  val file=File(File(filesDir,"models").apply{mkdirs()},"narrator.gguf")
+  contentResolver.openInputStream(uri)?.use{input->FileOutputStream(file).use{input.copyTo(it)}}?:return@withContext
+  val started=System.currentTimeMillis();withContext(Dispatchers.Main){status.text="Cargando narrador local…"};engine.loadModel(file.path)
+  val ai=LocalNarrativeAI("daniel",LlamaCppNarrativeRuntime(engine))
+  session=StorySession(RuinsScenario.create(),ai)
+  withContext(Dispatchers.Main){status.text="Narrador local preparado · sin conexión";metrics.text="Carga: "+(System.currentTimeMillis()-started)+" ms";storyText.text="Nadir despierta bajo un cielo desconocido. ¿Qué hace o dice Daniel?";send.isEnabled=true}
  }
-
- private fun generate(){
-  if(!ready)return
-  val userAction=action.text.toString().trim();if(userAction.isEmpty())return
-  action.text.clear();send.isEnabled=false
-  val prompt="Continúa una novela interactiva en español. No decidas la siguiente acción del protagonista. Acción de Daniel: "+userAction
-  val started=System.currentTimeMillis();val output=StringBuilder()
+ private fun playTurn(){val current=session?:return;val userAction=action.text.toString().trim();if(userAction.isEmpty())return
+  action.text.clear();send.isEnabled=false;val started=System.currentTimeMillis()
   lifecycleScope.launch(Dispatchers.Default){
-   engine.sendUserPrompt(prompt,700).onCompletion{
-    val elapsed=System.currentTimeMillis()-started
-    withContext(Dispatchers.Main){metrics.text="Generación: "+elapsed+" ms";send.isEnabled=true}
-   }.collect{token->
-    output.append(token)
-    withContext(Dispatchers.Main){story.text=output.toString()}
-   }
+   try{val turn=current.act(userAction);withContext(Dispatchers.Main){storyText.text=turn.prose;metrics.text="Turno "+turn.story.turn+" · "+(System.currentTimeMillis()-started)+" ms"}}
+   catch(t:Throwable){withContext(Dispatchers.Main){storyText.text="Error local: "+(t.message?:"desconocido")}}
+   finally{withContext(Dispatchers.Main){send.isEnabled=true}}
   }
  }
  override fun onDestroy(){if(::engine.isInitialized)engine.destroy();super.onDestroy()}
