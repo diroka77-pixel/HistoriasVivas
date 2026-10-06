@@ -21,3 +21,10 @@ Objetivo inicial: demostrar continuidad narrativa real entre sesiones mediante u
 ## Estado
 
 🚧 En desarrollo — Engine 0.1.
+
+
+### Coste e IA local
+
+- Objetivo: jugar sin coste por tokens ni llamadas a APIs de pago.
+- El motor está preparado para utilizar inferencia local sustituible.
+- Los servicios externos de pago no forman parte del funcionamiento obligatorio.
