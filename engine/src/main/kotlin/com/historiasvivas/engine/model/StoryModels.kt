@@ -1,6 +1,7 @@
 package com.historiasvivas.engine.model
 
 import kotlinx.serialization.Serializable
+import com.historiasvivas.engine.character.CharacterMind
 
 @Serializable
 enum class StoryStatus { ACTIVE, ENDING, FINISHED }
@@ -34,6 +35,7 @@ data class Character(
     val traits: Set<String> = emptySet(),
     val goals: List<String> = emptyList(),
     val knowledge: Set<String> = emptySet(),
+    val mind: CharacterMind = CharacterMind(),
     val alive: Boolean = true
 )
 
