@@ -20,16 +20,32 @@ class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),p
   val base=(hypothesis.confidence+courage/4-caution/6).coerceIn(10,95)
   val targetLocation=story.world.locations.keys.firstOrNull{hypothesis.subject.contains(it,true)}
   val currentLocation=spatial.locationOf(story.world.spatial,characterId)
+  val valued=story.world.relationships.asSequence()
+   .filter{it.fromCharacterId==characterId&&story.world.characters[it.toCharacterId]?.alive==true}
+   .map{it to (it.affection+it.trust/2-it.fear/3)}
+   .sortedWith(compareByDescending<Pair<Relationship,Int>>{it.second}.thenBy{it.first.toCharacterId})
+   .firstOrNull()
+  val protectTarget=valued?.takeIf{it.second>=55}?.first?.toCharacterId
+  val presentListeners=currentLocation?.let{spatial.presentAt(story.world.spatial,it)}.orEmpty()-characterId
+  val warnTarget=valued?.first?.toCharacterId?.takeIf{it in presentListeners}
+   ?:presentListeners.filter{story.world.characters[it]?.alive==true}.sorted().firstOrNull()
   val kind=when{
    secrecy>=65&&hypothesis.confidence>=65->AutonomousActionKind.HIDE_EVIDENCE
-   compassion>=65&&hypothesis.confidence>=60->AutonomousActionKind.WARN
+   compassion>=75&&hypothesis.confidence>=65&&protectTarget!=null->AutonomousActionKind.PROTECT
+   compassion>=65&&hypothesis.confidence>=60&&warnTarget!=null->AutonomousActionKind.WARN
    caution>=70&&courage<30->AutonomousActionKind.WITHDRAW
    targetLocation!=null&&targetLocation!=currentLocation&&hypothesis.confidence>=55->AutonomousActionKind.TRAVEL
    else->AutonomousActionKind.INVESTIGATE
   }
+  val targetCharacter=when(kind){
+   AutonomousActionKind.PROTECT->protectTarget
+   AutonomousActionKind.WARN->warnTarget
+   else->null
+  }
   return AutonomousActionPlan(
    "auto-"+characterId+"-"+hypothesis.id+"-"+story.turn,characterId,hypothesis.id,kind,base,
-   targetLocationId=targetLocation,motivation="Acts on private hypothesis: "+hypothesis.claim,turn=story.turn
+   targetLocationId=targetLocation,targetCharacterId=targetCharacter,
+   motivation="Acts on private hypothesis: "+hypothesis.claim,turn=story.turn
   )
  }
 }
