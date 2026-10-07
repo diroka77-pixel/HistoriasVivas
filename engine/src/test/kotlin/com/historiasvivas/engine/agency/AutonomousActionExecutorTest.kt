@@ -128,7 +128,7 @@ class AutonomousActionExecutorTest {
   assertEquals(ActionExecutionStatus.STARTED,result.status)
   val hidden=after.world.discovery.signals.getValue("trace")
   assertTrue(hidden.salience<signal.salience)
-  assertFalse(hidden.persistent)
+  assertEquals(signal.persistent,hidden.persistent)
   assertEquals(signal.hiddenCause,hidden.hiddenCause)
   assertEquals(evidence,after.world.discovery.evidence.getValue("e"))
  }
