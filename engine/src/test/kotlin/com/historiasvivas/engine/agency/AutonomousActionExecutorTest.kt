@@ -123,7 +123,7 @@ class AutonomousActionExecutorTest {
    spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"))),
    discovery=DiscoveryState(signals=mapOf("trace" to signal),evidence=mapOf("e" to evidence))
   ),turn=12)
-  val plan=AutonomousActionPlan("hide","erik","h",AutonomousActionKind.HIDE_EVIDENCE,80,motivation="Conceal",turn=12)
+  val plan=AutonomousActionPlan("hide","erik","h",AutonomousActionKind.HIDE_EVIDENCE,80,targetSignalId="trace",motivation="Conceal",turn=12)
   val (after,result)=AutonomousActionExecutor().execute(story,plan)
   assertEquals(ActionExecutionStatus.STARTED,result.status)
   val hidden=after.world.discovery.signals.getValue("trace")
