@@ -14,7 +14,7 @@ class OffscreenWorldTest {
  @Test fun evidenceCanRevealHiddenEventLater(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
   val gate=KnowledgeGate()
-  val updated=gate.discover(listOf(event),Discovery("h1","daniel",DiscoveryChannel.EVIDENCE,"Found Erik's blood near the entrance"))
+  val updated=gate.discover(listOf(event),Discovery("h1","daniel",DiscoveryChannel.EVIDENCE,"Found Erik's blood near the entrance",sourceId="evidence-blood-1"))
   assertEquals(1,gate.visible(updated,"daniel").size)
  }
  @Test fun absentCharacterCanActOffscreen(){
@@ -24,5 +24,23 @@ class OffscreenWorldTest {
   val actions=OffscreenSimulator().plan(story,presentCharacterIds=setOf("daniel"))
   assertTrue(actions.any{it.intent.characterId=="erik"})
   assertTrue(actions.all{it.hiddenEvent.knownBy==setOf(it.intent.characterId)})
+ }
+ @Test fun unsupportedClaimCannotRevealHiddenEvent(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val gate=KnowledgeGate()
+  val unchanged=gate.discover(
+   listOf(event),
+   Discovery("h1","daniel",DiscoveryChannel.RUMOR,"Someone says Erik entered the ruins")
+  )
+  assertTrue(gate.visible(unchanged,"daniel").isEmpty())
+ }
+ @Test fun witnessedEventCanBeKnownWithoutIndirectSource(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val gate=KnowledgeGate()
+  val updated=gate.discover(
+   listOf(event),
+   Discovery("h1","daniel",DiscoveryChannel.WITNESSED,"Daniel sees Erik cross the entrance")
+  )
+  assertEquals(1,gate.visible(updated,"daniel").size)
  }
 }
