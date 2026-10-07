@@ -3,7 +3,8 @@ import com.historiasvivas.engine.character.*
 import kotlinx.serialization.Serializable
 
 @Serializable data class Evidence(
- val id:String,val signalId:String,val observation:String,val strength:Int=50,val discoveredTurn:Long,val discoveredBy:String
+ val id:String,val signalId:String,val observation:String,val strength:Int=50,val discoveredTurn:Long,val discoveredBy:String,
+ val relatedEventId:String?=null
 )
 @Serializable enum class InterpretationRelation { SUPPORTS, CONTRADICTS }
 @Serializable data class Interpretation(
