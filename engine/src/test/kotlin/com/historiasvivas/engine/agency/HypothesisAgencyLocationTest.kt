@@ -80,4 +80,19 @@ class HypothesisAgencyLocationTest {
   assertEquals("elena",plan.targetCharacterId)
  }
 
+ @Test fun secrecyTargetsSupportingSignalEvenAfterActorInvestigatedIt(){
+  val erik=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("secrecy" to 90))))
+  val signal=WorldSignal("trace","ruins",sense=SignalSense.TRACE,surface="Machine marks",createdTurn=1,salience=80,investigatedBy=setOf("erik"))
+  val evidence=Evidence("e","trace","Machine marks",70,2,"erik")
+  val h=Hypothesis("hide-h","erik","ruins","Someone used the ruins",80,supportingEvidenceIds=setOf("e"),createdTurn=2,status=HypothesisStatus.STRONG)
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik),
+   spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"))),
+   discovery=DiscoveryState(signals=mapOf("trace" to signal),evidence=mapOf("e" to evidence))
+  ),turn=3)
+  val plan=HypothesisAgencyEngine().plan(story,"erik",h)!!
+  assertEquals(AutonomousActionKind.HIDE_EVIDENCE,plan.kind)
+  assertEquals("trace",plan.targetSignalId)
+ }
+
 }
