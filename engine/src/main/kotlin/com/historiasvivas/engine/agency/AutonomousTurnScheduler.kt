@@ -32,7 +32,7 @@ class AutonomousTurnScheduler(
    val inference=reasoning.infer(current,character.id,current.turn).firstOrNull()?:return@forEach
    val plan=planner.plan(current,character.id,inference.hypothesis)?:return@forEach
    val (after,result)=executor.execute(current,plan)
-   val actionHistory=result.event?.let{event-> HiddenEvent("hidden-"+event.id,event.turn,plan.characterId,event.summary) }
+   val actionHistory=result.event?.let{event-> HiddenEvent(id="hidden-"+event.id,turn=event.turn,actorId=plan.characterId,summary=event.summary) }
    val agency=after.world.autonomousAgency.copy(
     plans=after.world.autonomousAgency.plans+(plan.id to plan),
     results=after.world.autonomousAgency.results+(plan.id to result)
