@@ -38,4 +38,46 @@ class HypothesisAgencyLocationTest {
   assertEquals(AutonomousActionKind.INVESTIGATE,plan.kind)
  }
 
+ @Test fun compassionateNpcProtectsMostValuedCharacterAndNamesTarget(){
+  val base=storyAt("settlement")
+  val erik=base.world.characters.getValue("erik").copy(
+   mind=CharacterMind(personality=PersonalityProfile(mapOf("compassion" to 90,"courage" to 40)))
+  )
+  val elena=Character("elena","Elena")
+  val daniel=Character("daniel","Daniel")
+  val story=base.copy(world=base.world.copy(
+   characters=mapOf("erik" to erik,"elena" to elena,"daniel" to daniel),
+   relationships=listOf(
+    Relationship("erik","elena",trust=70,affection=80),
+    Relationship("erik","daniel",trust=20,affection=25)
+   ),
+   spatial=base.world.spatial.copy(positions=mapOf(
+    "erik" to CharacterPosition("erik","settlement"),
+    "elena" to CharacterPosition("elena","ruins"),
+    "daniel" to CharacterPosition("daniel","settlement")
+   ))
+  ))
+  val plan=HypothesisAgencyEngine().plan(story,"erik",hypothesis())!!
+  assertEquals(AutonomousActionKind.PROTECT,plan.kind)
+  assertEquals("elena",plan.targetCharacterId)
+ }
+ @Test fun warningNamesPresentListenerInsteadOfLeavingExecutorToGuess(){
+  val base=storyAt("settlement")
+  val erik=base.world.characters.getValue("erik").copy(
+   mind=CharacterMind(personality=PersonalityProfile(mapOf("compassion" to 70)))
+  )
+  val elena=Character("elena","Elena")
+  val story=base.copy(world=base.world.copy(
+   characters=mapOf("erik" to erik,"elena" to elena),
+   relationships=listOf(Relationship("erik","elena",trust=50,affection=30)),
+   spatial=base.world.spatial.copy(positions=mapOf(
+    "erik" to CharacterPosition("erik","settlement"),
+    "elena" to CharacterPosition("elena","settlement")
+   ))
+  ))
+  val plan=HypothesisAgencyEngine().plan(story,"erik",hypothesis())!!
+  assertEquals(AutonomousActionKind.WARN,plan.kind)
+  assertEquals("elena",plan.targetCharacterId)
+ }
+
 }
