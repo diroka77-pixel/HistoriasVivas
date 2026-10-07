@@ -104,4 +104,20 @@ class CausalWorldEngineTest {
  }
 
 
+ @Test fun equivalentUnresolvedConsequenceIsNotQueuedTwice(){
+  val existing=Consequence("older-shortage","older-event","Shortage of water will worsen if nobody intervenes",12)
+  val story=Story("s","Nadir","p",world=WorldState(
+   pendingConsequences=listOf(existing),
+   environment=EnvironmentState(
+    resources=mapOf("water" to ResourcePool("water",18,100,20)),
+    pressures=mapOf("fauna" to WorldPressure("fauna",70,0,"Fauna near perimeter"))
+   )
+  ),turn=10)
+  val proposal=CausalEventDirector().propose(story)!!
+  val candidate=CausalEventMaterializer().materialize(story,proposal)!!
+  val validation=CausalEventValidator().validate(story,candidate)
+  assertFalse(validation.accepted)
+  assertTrue(validation.reasons.any{it.contains("Duplicate unresolved consequence")})
+ }
+
 }
