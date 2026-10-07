@@ -2,13 +2,19 @@ package com.historiasvivas.engine.agency
 import kotlinx.serialization.Serializable
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.spatial.SpatialEngine
+import com.historiasvivas.engine.discovery.DiscoveryEngine
+import com.historiasvivas.engine.discovery.InvestigationEngine
 
 @Serializable enum class ActionExecutionStatus { STARTED, BLOCKED, DEFERRED }
 @Serializable data class AutonomousActionResult(
  val planId:String,val status:ActionExecutionStatus,val reason:String,val event:StoryEvent?=null
 )
 
-class AutonomousActionExecutor(private val spatial:SpatialEngine=SpatialEngine()){
+class AutonomousActionExecutor(
+ private val spatial:SpatialEngine=SpatialEngine(),
+ private val discovery:DiscoveryEngine=DiscoveryEngine(),
+ private val investigation:InvestigationEngine=InvestigationEngine()
+){
  fun execute(story:Story,plan:AutonomousActionPlan):Pair<Story,AutonomousActionResult>{
   val c=story.world.characters[plan.characterId]
   if(c==null||!c.alive)return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Character unavailable")
@@ -22,7 +28,20 @@ class AutonomousActionExecutor(private val spatial:SpatialEngine=SpatialEngine()
      story.copy(world=story.world.copy(spatial=after)) to AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Journey started",event)
     }
    }
-   AutonomousActionKind.INVESTIGATE,AutonomousActionKind.WARN,AutonomousActionKind.PROTECT,AutonomousActionKind.HIDE_EVIDENCE,AutonomousActionKind.WITHDRAW->
+   AutonomousActionKind.INVESTIGATE->{
+    val location=spatial.locationOf(story.world.spatial,plan.characterId)
+    val signal=discovery.visibleAt(story.world.discovery,plan.characterId,location).firstOrNull()
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No observable signal to investigate")
+    val outcome=investigation.investigate(story.world.discovery,signal.id,plan.characterId,c.mind,story.turn)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Investigation could not resolve")
+    val event=StoryEvent(
+     plan.id+"-investigation",story.turn,c.name+" investigates an observable anomaly",
+     setOf(c.id),setOf("autonomous","investigation")
+    )
+    story.copy(world=story.world.copy(discovery=outcome.state)) to
+     AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Observable signal investigated",event)
+   }
+   AutonomousActionKind.WARN,AutonomousActionKind.PROTECT,AutonomousActionKind.HIDE_EVIDENCE,AutonomousActionKind.WITHDRAW->
     story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Requires scene/world-specific resolution")
   }
  }
