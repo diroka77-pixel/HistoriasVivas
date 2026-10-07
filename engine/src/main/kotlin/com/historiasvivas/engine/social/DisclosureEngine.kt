@@ -36,4 +36,19 @@ class DisclosureEngine {
   return DisclosureDecision("disclosure-"+speakerId+"-"+listenerId+"-"+hypothesis.id+"-"+story.turn,speakerId,listenerId,hypothesis.id,kind,story.turn,
    "trust=$trust fear=$fear honesty=$honesty caution=$caution loyalty=$loyalty",claim)
  }
+ fun toTestimony(decision:DisclosureDecision,hypothesis:Hypothesis):Testimony?{
+  val claim=decision.revealedClaim?:return null
+  val intent=when(decision.kind){
+   DisclosureKind.TELL->TestimonyIntent.HONEST
+   DisclosureKind.PARTIAL->TestimonyIntent.WITHHOLDING
+   DisclosureKind.LIE->TestimonyIntent.LYING
+   DisclosureKind.DEFLECT->TestimonyIntent.MISLEADING
+   DisclosureKind.DELAY->return null
+  }
+  return Testimony(
+   id="testimony-"+decision.id,speakerId=decision.speakerId,claim=claim,subject=hypothesis.subject,turn=decision.turn,
+   sourceEvidenceIds=hypothesis.supportingEvidenceIds,channel=InformationChannel.DIRECT_TESTIMONY,
+   intent=intent,privateTruth=if(intent==TestimonyIntent.HONEST)null else hypothesis.claim
+  )
+ }
 }
