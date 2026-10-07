@@ -34,7 +34,7 @@ class MainActivity:AppCompatActivity(){
   val file=File(File(filesDir,"models").apply{mkdirs()},"narrator.gguf")
   contentResolver.openInputStream(uri)?.use{input->FileOutputStream(file).use{input.copyTo(it)}}?:return@withContext
   val started=System.currentTimeMillis();withContext(Dispatchers.Main){status.text="Cargando narrador local…"};engine.loadModel(file.path)
-  val ai=LocalNarrativeAI("daniel",LlamaCppNarrativeRuntime(engine))
+  val ai=LocalNarrativeAI(LlamaCppNarrativeRuntime(engine))
   val saveFile=File(filesDir,"nadir-story.json")
   session=if(saveFile.exists()) StorySession.resume(saveFile.readText(),ai) else StorySession(RuinsScenario.create(),ai)
   val manuscriptFile=File(filesDir,"nadir-manuscript.json")
