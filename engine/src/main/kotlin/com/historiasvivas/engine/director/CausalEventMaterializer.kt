@@ -34,7 +34,12 @@ class CausalEventMaterializer {
     if(signals.size<2)null else {
      val participants=signals.flatMap{it.noticedBy}.toSet()
      val event=StoryEvent(proposal.id,story.turn+1,proposal.summary,participants=participants,tags=setOf("emergent","discovery"))
-     MaterializedEmergentEvent(event=event,source=proposal)
+     val consequence=Consequence(
+      proposal.id+"-unresolved-signals",event.id,
+      "Persistent observable anomalies remain unresolved: "+signals.map{it.id}.sorted().joinToString(","),
+      story.turn+2
+     )
+     MaterializedEmergentEvent(event=event,consequences=listOf(consequence),source=proposal)
     }
    }
    EmergentEventKind.EXPEDITION_DANGER->{
