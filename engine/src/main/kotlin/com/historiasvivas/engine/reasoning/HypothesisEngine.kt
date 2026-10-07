@@ -26,7 +26,9 @@ class HypothesisEngine {
   )
  }
  fun update(h:Hypothesis,supporting:List<Evidence>,contradicting:List<Evidence>,turn:Long):Hypothesis{
-  val knownSupport=supporting.filter{it.discoveredBy==h.characterId}.distinctBy{it.id}\n  val knownOpposition=contradicting.filter{it.discoveredBy==h.characterId}.distinctBy{it.id}\n  val support=knownSupport.sumOf{it.strength}/5
+  val knownSupport=supporting.filter{it.discoveredBy==h.characterId && it.id !in h.supportingEvidenceIds && it.id !in h.contradictingEvidenceIds}.distinctBy{it.id}
+  val knownOpposition=contradicting.filter{it.discoveredBy==h.characterId && it.id !in h.supportingEvidenceIds && it.id !in h.contradictingEvidenceIds}.distinctBy{it.id}
+  val support=knownSupport.sumOf{it.strength}/5
   val oppose=knownOpposition.sumOf{it.strength}/4
   val confidence=(h.confidence+support-oppose).coerceIn(0,95)
   val base=status(confidence)
