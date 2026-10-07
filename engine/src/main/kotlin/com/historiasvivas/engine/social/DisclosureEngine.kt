@@ -1,0 +1,39 @@
+package com.historiasvivas.engine.social
+import kotlinx.serialization.Serializable
+import com.historiasvivas.engine.model.*
+import com.historiasvivas.engine.reasoning.Hypothesis
+
+@Serializable enum class DisclosureKind { TELL, PARTIAL, DELAY, DEFLECT, LIE }
+@Serializable data class DisclosureDecision(
+ val id:String,val speakerId:String,val listenerId:String,val hypothesisId:String,val kind:DisclosureKind,
+ val turn:Long,val motivation:String,val revealedClaim:String?=null
+)
+
+class DisclosureEngine {
+ fun decide(story:Story,speakerId:String,listenerId:String,hypothesis:Hypothesis):DisclosureDecision?{
+  val speaker=story.world.characters[speakerId]?:return null
+  if(!speaker.alive||hypothesis.characterId!=speakerId)return null
+  val relation=story.world.relationships.firstOrNull{it.fromCharacterId==speakerId&&it.toCharacterId==listenerId}
+  val trust=relation?.trust?:speaker.mind.perceptions[listenerId]?.impressions?.get("trust")?:0
+  val fear=relation?.fear?:0
+  val p=speaker.mind.personality.dimensions
+  val honesty=p["honesty"]?:0; val caution=p["caution"]?:0; val loyalty=p["loyalty"]?:0
+  val disclosure=trust+loyalty/3+honesty/3-caution/3-fear/2
+  val kind=when{
+   fear>=65&&honesty<20->DisclosureKind.LIE
+   disclosure>=55->DisclosureKind.TELL
+   disclosure>=20->DisclosureKind.PARTIAL
+   disclosure>=-10->DisclosureKind.DELAY
+   honesty<=-45&&trust<=-25->DisclosureKind.LIE
+   else->DisclosureKind.DEFLECT
+  }
+  val claim=when(kind){
+   DisclosureKind.TELL->hypothesis.claim
+   DisclosureKind.PARTIAL->"I found indications related to "+hypothesis.subject+", but I am not certain enough to tell you everything yet."
+   DisclosureKind.LIE->"I found nothing reliable about "+hypothesis.subject+"."
+   else->null
+  }
+  return DisclosureDecision("disclosure-"+speakerId+"-"+listenerId+"-"+hypothesis.id+"-"+story.turn,speakerId,listenerId,hypothesis.id,kind,story.turn,
+   "trust=$trust fear=$fear honesty=$honesty caution=$caution loyalty=$loyalty",claim)
+ }
+}
