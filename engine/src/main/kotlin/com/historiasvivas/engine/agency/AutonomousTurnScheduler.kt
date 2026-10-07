@@ -3,6 +3,7 @@ import com.historiasvivas.engine.model.Story
 import com.historiasvivas.engine.reasoning.AutonomousReasoningEngine
 import com.historiasvivas.engine.spatial.SpatialEngine
 import com.historiasvivas.engine.offscreen.HiddenEvent
+import com.historiasvivas.engine.discovery.AutonomousActionSignalGenerator
 
 data class AutonomousCycle(
  val plans:List<AutonomousActionPlan> = emptyList(),
@@ -14,6 +15,7 @@ class AutonomousTurnScheduler(
  private val planner:HypothesisAgencyEngine=HypothesisAgencyEngine(),
  private val executor:AutonomousActionExecutor=AutonomousActionExecutor(),
  private val spatial:SpatialEngine=SpatialEngine(),
+ private val signalGenerator:AutonomousActionSignalGenerator=AutonomousActionSignalGenerator(),
  private val cooldownTurns:Long=3
 ){
  fun run(story:Story,presentCharacterIds:Set<String>,maxCharacters:Int=1):Pair<Story,AutonomousCycle>{
@@ -42,11 +44,19 @@ class AutonomousTurnScheduler(
    val plan=planner.plan(current,character.id,inference.hypothesis)?:return@forEach
    val (after,result)=executor.execute(current,plan)
    val actionHistory=result.event?.let{event-> HiddenEvent(id="hidden-"+event.id,turn=event.turn,actorId=plan.characterId,summary=event.summary) }
+   val generatedSignal=signalGenerator.generate(after,plan,result)
+   val discovery=generatedSignal?.let{signal->
+    after.world.discovery.copy(signals=after.world.discovery.signals+(signal.id to signal))
+   }?:after.world.discovery
    val agency=after.world.autonomousAgency.copy(
     plans=after.world.autonomousAgency.plans+(plan.id to plan),
     results=after.world.autonomousAgency.results+(plan.id to result)
    )
-   current=after.copy(world=after.world.copy(autonomousAgency=agency,hiddenEvents=(after.world.hiddenEvents+listOfNotNull(actionHistory)).distinctBy{it.id}))
+   current=after.copy(world=after.world.copy(
+    autonomousAgency=agency,
+    hiddenEvents=(after.world.hiddenEvents+listOfNotNull(actionHistory)).distinctBy{it.id},
+    discovery=discovery
+   ))
    plans+=plan; results+=result
   }
   return current to AutonomousCycle(plans,results)

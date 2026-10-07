@@ -8,7 +8,7 @@ import com.historiasvivas.engine.discovery.Evidence
  val id:String,val characterId:String,val subject:String,val claim:String,val confidence:Int,
  val supportingEvidenceIds:Set<String> = emptySet(),val supportingBeliefSources:Set<String> = emptySet(),
  val contradictingEvidenceIds:Set<String> = emptySet(),val createdTurn:Long,val revisedTurn:Long=createdTurn,
- val status:HypothesisStatus=HypothesisStatus.TENTATIVE
+ val status:HypothesisStatus=HypothesisStatus.TENTATIVE,val relatedEventId:String?=null
 )
 @Serializable data class ReasoningState(val hypotheses:Map<String,Hypothesis> = emptyMap())
 
@@ -19,10 +19,11 @@ class HypothesisEngine {
   val evidenceScore=known.sumOf{it.strength}.div(known.size).coerceIn(0,100)
   val beliefScore=beliefs.filter{it.confidence>=40}.map{it.confidence}.average().takeUnless{it.isNaN()}?.toInt()?:0
   val confidence=(evidenceScore*2/3+beliefScore/3).coerceIn(10,90)
+  val relatedEventId=known.mapNotNull{it.relatedEventId}.distinct().singleOrNull()
   return Hypothesis(
    id="hypothesis-"+characterId+"-"+subject+"-"+turn,characterId=characterId,subject=subject,claim=claim,confidence=confidence,
    supportingEvidenceIds=known.map{it.id}.toSet(),supportingBeliefSources=beliefs.mapNotNull{it.sourceEventId}.toSet(),
-   createdTurn=turn,status=status(confidence)
+   createdTurn=turn,status=status(confidence),relatedEventId=relatedEventId
   )
  }
  fun update(h:Hypothesis,supporting:List<Evidence>,contradicting:List<Evidence>,turn:Long):Hypothesis{
@@ -33,9 +34,11 @@ class HypothesisEngine {
   val confidence=(h.confidence+support-oppose).coerceIn(0,95)
   val base=status(confidence)
   val finalStatus=if(knownOpposition.isNotEmpty()&&confidence>=20&&confidence<45)HypothesisStatus.WEAKENED else base
+  val eventIds=(listOfNotNull(h.relatedEventId)+knownSupport.mapNotNull{it.relatedEventId}).distinct()
   return h.copy(
    confidence=confidence,supportingEvidenceIds=h.supportingEvidenceIds+knownSupport.map{it.id},
-   contradictingEvidenceIds=h.contradictingEvidenceIds+knownOpposition.map{it.id},revisedTurn=turn,status=finalStatus
+   contradictingEvidenceIds=h.contradictingEvidenceIds+knownOpposition.map{it.id},revisedTurn=turn,status=finalStatus,
+   relatedEventId=eventIds.singleOrNull()
   )
  }
  private fun status(c:Int)=when{c>=75->HypothesisStatus.STRONG;c>=50->HypothesisStatus.PLAUSIBLE;c>=20->HypothesisStatus.TENTATIVE;else->HypothesisStatus.REJECTED}
