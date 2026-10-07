@@ -117,7 +117,7 @@ class AutonomousActionExecutorTest {
  @Test fun hidingEvidenceReducesObservableTraceWithoutErasingPriorKnowledgeOrCause(){
   val erik=Character("erik","Erik")
   val signal=WorldSignal("trace","ruins",sense=SignalSense.TRACE,surface="Fresh tracks lead below",hiddenCause="erik opened the sealed hatch",createdTurn=5,salience=90)
-  val evidence=Evidence("e","trace","elena","Fresh tracks lead below",80,6)
+  val evidence=Evidence("e","trace","Fresh tracks lead below",80,6,"elena")
   val story=Story("s","Nadir","p",world=WorldState(
    characters=mapOf("erik" to erik),
    spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"))),
