@@ -49,13 +49,13 @@ class KnowledgeGate {
   return when(discovery.channel){
    DiscoveryChannel.WITNESSED->sourceId.isNullOrBlank()
    DiscoveryChannel.TOLD->sourceId?.let{sources.testimonies[it]}?.let{
-    it.channel!=InformationChannel.RUMOR
+    it.channel!=InformationChannel.RUMOR && it.relatedEventId==discovery.eventId
    }?:false
    DiscoveryChannel.RUMOR->sourceId?.let{sources.testimonies[it]}?.let{
-    it.channel==InformationChannel.RUMOR
+    it.channel==InformationChannel.RUMOR && it.relatedEventId==discovery.eventId
    }?:false
    DiscoveryChannel.EVIDENCE,DiscoveryChannel.INVESTIGATION->sourceId?.let{sources.evidence[it]}?.let{
-    it.discoveredBy==discovery.characterId
+    it.discoveredBy==discovery.characterId && it.relatedEventId==discovery.eventId
    }?:false
   }
  }
