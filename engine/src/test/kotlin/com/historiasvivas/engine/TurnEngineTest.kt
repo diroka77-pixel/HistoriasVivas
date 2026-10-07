@@ -5,6 +5,7 @@ import com.historiasvivas.engine.turn.TurnEngine
 import com.historiasvivas.engine.character.*
 import com.historiasvivas.engine.discovery.*
 import com.historiasvivas.engine.spatial.*
+import com.historiasvivas.engine.director.DirectorState
 import kotlinx.coroutines.runBlocking
 import kotlin.test.*
 
