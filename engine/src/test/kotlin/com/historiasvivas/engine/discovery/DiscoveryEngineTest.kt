@@ -48,4 +48,16 @@ class DiscoveryEngineTest {
   assertTrue(engine.visibleAt(attempted,"daniel","ruins").isEmpty())
  }
 
+ @Test fun materiallyRevisedSignalCanBeInvestigatedAgainWithoutErasingKnowledge(){
+  val original=WorldSignal("trace","ruins",sense=SignalSense.TRACE,surface="Faint tracks",createdTurn=1,salience=40,investigatedBy=setOf("erik"))
+  val evidence=Evidence("e1","trace","Faint tracks",40,2,"erik")
+  val state=DiscoveryState(signals=mapOf("trace" to original),evidence=mapOf("e1" to evidence))
+  val revised=DiscoveryEngine().reactivate(state,"trace",5,newSurface="Fresh tracks cross the old trail",newSalience=80)
+  val signal=revised.signals.getValue("trace")
+  assertEquals(1,signal.revision)
+  assertFalse("erik" in signal.investigatedBy)
+  assertTrue(DiscoveryEngine().visibleAt(revised,"erik","ruins").any{it.id=="trace"})
+  assertEquals(evidence,revised.evidence.getValue("e1"))
+ }
+
 }
