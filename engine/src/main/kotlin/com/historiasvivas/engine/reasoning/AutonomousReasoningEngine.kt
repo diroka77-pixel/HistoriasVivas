@@ -19,7 +19,7 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
    }
 
   fun contextFor(signalId:String):String{
-   val signal=story.world.discovery.signals[signalId]?:return "signal:"+signalId
+   val signal=story.world.discovery.signals[signalId]?:return "legacy"
    signal.locationId?.let{return "location:"+it}
    if(signal.routeFrom!=null&&signal.routeTo!=null){
     val ends=listOf(signal.routeFrom,signal.routeTo).sorted()
@@ -40,7 +40,7 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
   return interpretedGroups.take(2).mapNotNull{(claim,context,clues)->
    val subject=when{
     context.startsWith("location:")->context.removePrefix("location:")
-    context.startsWith("signal:")->clues.map{it.signalId}.distinct().sorted().joinToString("+")
+    context=="legacy"->clues.map{it.signalId}.distinct().sorted().joinToString("+")\n    context.startsWith("signal:")->clues.map{it.signalId}.distinct().sorted().joinToString("+")
     else->context
    }
    val existing=story.world.reasoning.hypotheses.values
