@@ -7,7 +7,7 @@ import com.historiasvivas.engine.model.Character
  */
 class PersonalityGrowthEngine {
  fun derive(character:Character):Map<String,Int>{
-  val traces=character.mind.emotionalMemory.values
+  val traces=character.mind.emotionalMemory.values.filter{it.revision==0}
   if(traces.isEmpty())return emptyMap()
   fun weighted(emotion:String)=traces.sumOf{(it.emotions[emotion]?:0)*it.salience/100}
   val shifts=mutableMapOf<String,Int>()
@@ -23,6 +23,8 @@ class PersonalityGrowthEngine {
  }
  fun evolve(character:Character):Character{
   val shifts=derive(character)
-  return if(shifts.isEmpty())character else character.copy(mind=character.mind.copy(personality=character.mind.personality.shifted(shifts)))
+  if(shifts.isEmpty())return character
+  val consumed=character.mind.emotionalMemory.mapValues{(_,trace)->if(trace.revision==0)trace.copy(revision=1) else trace}
+  return character.copy(mind=character.mind.copy(personality=character.mind.personality.shifted(shifts),emotionalMemory=consumed))
  }
 }
