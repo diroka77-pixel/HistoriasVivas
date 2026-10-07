@@ -75,4 +75,19 @@ class CausalWorldEngineTest {
   assertFalse(CausalEventValidator().validate(story,candidate).accepted)
  }
 
+ @Test fun deadObserversCannotKeepDiscoveryProposalCausal(){
+  val signals=mapOf(
+   "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Pulse",createdTurn=1,salience=80,investigatedBy=setOf("erik")),
+   "b" to WorldSignal("b","ruins",sense=SignalSense.TRACE,surface="Marks",createdTurn=2,salience=75,investigatedBy=setOf("erik"))
+  )
+  val characters=mapOf(
+   "erik" to Character("erik","Erik"),
+   "ghost" to Character("ghost","Ghost",alive=false)
+  )
+  val story=Story("s","Nadir","p",world=WorldState(characters=characters,discovery=DiscoveryState(signals=signals)),turn=5)
+  val stale=EmergentEventProposal("d",EmergentEventKind.DISCOVERY_OPPORTUNITY,70,listOf(CausalFactor("signals",45,"old"),CausalFactor("salience",25,"old")),"Old opportunity",false)
+  val candidate=CausalEventMaterializer().materialize(story,stale)!!
+  assertFalse(CausalEventValidator().validate(story,candidate).accepted)
+ }
+
 }
