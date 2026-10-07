@@ -88,6 +88,7 @@ class AutonomousTurnSchedulerTest {
   val (_,cycle)=AutonomousTurnScheduler().run(withBlocked,emptySet())
   assertEquals(1,cycle.plans.size)
   assertEquals("erik",cycle.plans.single().characterId)
+  assertNotEquals("blocked",cycle.plans.single().id)
  }
 
 }
