@@ -10,8 +10,16 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
   val evidence=story.world.discovery.evidence.values.filter{it.discoveredBy==characterId}.distinctBy{it.id}
   if(evidence.size<2)return emptyList()
 
+  val contradictions=story.world.discovery.interpretations.values
+   .filter{it.characterId==characterId&&it.relation==com.historiasvivas.engine.discovery.InterpretationRelation.CONTRADICTS&&it.relatedHypothesisId!=null}
+   .groupBy{it.relatedHypothesisId!!}
+   .mapValues{(_,items)->
+    val ids=items.flatMap{it.evidenceIds}.toSet()
+    evidence.filter{it.id in ids}
+   }
+
   val interpretedGroups=story.world.discovery.interpretations.values
-   .filter{it.characterId==characterId}
+   .filter{it.characterId==characterId&&it.relation==com.historiasvivas.engine.discovery.InterpretationRelation.SUPPORTS}
    .groupBy{it.hypothesis}
    .mapNotNull{(claim,interpretations)->
     val evidenceIds=interpretations.flatMap{it.evidenceIds}.toSet()
@@ -28,7 +36,7 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
    val hypothesis=if(existing==null){
     hypotheses.formulate(characterId,subject,claim,clues,character.mind.beliefs,turn)
    }else{
-    hypotheses.update(existing,clues,emptyList(),turn)
+    hypotheses.update(existing,clues,contradictions[existing.id].orEmpty(),turn)
    }
    hypothesis?.let{AutonomousInference(characterId,it)}
   }
