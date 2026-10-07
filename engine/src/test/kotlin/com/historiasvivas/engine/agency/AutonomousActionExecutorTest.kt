@@ -80,4 +80,38 @@ class AutonomousActionExecutorTest {
   assertTrue(journey.to in setOf("forest","settlement"))
  }
 
+ @Test fun warningTransfersClaimAsListenerBeliefWithoutSharingPrivateHypothesisState(){
+  val erik=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("honesty" to 80,"loyalty" to 80))))
+  val elena=Character("elena","Elena")
+  val h=Hypothesis("h","erik","ruins","The ruins may be dangerous",80,setOf("e1","e2"),createdTurn=10,status=HypothesisStatus.STRONG)
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik,"elena" to elena),
+   relationships=listOf(Relationship("erik","elena",trust=80)),
+   spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","settlement"),"elena" to CharacterPosition("elena","settlement"))),
+   reasoning=ReasoningState(hypotheses=mapOf(h.id to h))
+  ),turn=12)
+  val plan=AutonomousActionPlan("warn","erik","h",AutonomousActionKind.WARN,80,targetCharacterId="elena",motivation="Protect Elena",turn=12)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  assertTrue(after.world.characters.getValue("elena").mind.beliefs.any{it.claim==h.claim})
+  assertEquals(setOf("h"),after.world.reasoning.hypotheses.keys)
+  assertTrue(after.world.socialKnowledge.testimonies.isNotEmpty())
+  assertTrue(after.world.socialKnowledge.heardClaims.values.any{it.listenerId=="elena"})
+ }
+ @Test fun warningCannotTransferKnowledgeToAbsentListener(){
+  val erik=Character("erik","Erik")
+  val elena=Character("elena","Elena")
+  val h=Hypothesis("h","erik","ruins","The ruins may be dangerous",80,setOf("e1","e2"),createdTurn=10,status=HypothesisStatus.STRONG)
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik,"elena" to elena),
+   spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"),"elena" to CharacterPosition("elena","settlement"))),
+   reasoning=ReasoningState(hypotheses=mapOf(h.id to h))
+  ),turn=12)
+  val plan=AutonomousActionPlan("warn","erik","h",AutonomousActionKind.WARN,80,targetCharacterId="elena",motivation="Warn",turn=12)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.BLOCKED,result.status)
+  assertTrue(after.world.characters.getValue("elena").mind.beliefs.isEmpty())
+  assertTrue(after.world.socialKnowledge.heardClaims.isEmpty())
+ }
+
 }
