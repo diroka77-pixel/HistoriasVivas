@@ -23,4 +23,17 @@ class InvestigationEngineTest {
   assertTrue(second.interpretation.confidence>first.interpretation.confidence)
   assertTrue(second.state.interpretations.containsKey(first.interpretation.id))
  }
+ @Test fun repeatedSameTurnInvestigationDoesNotOverwriteEarlierEvidence(){
+  val signal=WorldSignal("s","ruins",sense=SignalSense.SIGHT,surface="A shifting mark",createdTurn=1,salience=70)
+  val initial=DiscoveryState(signals=mapOf("s" to signal))
+  val mind=CharacterMind()
+  val first=InvestigationEngine().investigate(initial,"s","erik",mind,5)!!
+  val reopened=first.state.copy(signals=first.state.signals+("s" to first.state.signals.getValue("s").copy(investigatedBy=emptySet())))
+  val second=InvestigationEngine().investigate(reopened,"s","erik",mind,5)!!
+  assertEquals(2,second.state.evidence.size)
+  assertEquals(2,second.state.evidence.keys.toSet().size)
+  assertTrue("evidence-s-erik-5" in second.state.evidence)
+  assertTrue("evidence-s-erik-5-2" in second.state.evidence)
+ }
+
 }
