@@ -18,20 +18,32 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
     evidence.filter{it.id in ids}
    }
 
+  fun contextFor(signalId:String):String{
+   val signal=story.world.discovery.signals[signalId]?:return "signal:"+signalId
+   signal.locationId?.let{return "location:"+it}
+   if(signal.routeFrom!=null&&signal.routeTo!=null){
+    val ends=listOf(signal.routeFrom,signal.routeTo).sorted()
+    return "route:"+ends.joinToString("<->")
+   }
+   return "signal:"+signalId
+  }
   val interpretedGroups=story.world.discovery.interpretations.values
    .filter{it.characterId==characterId&&it.relation==com.historiasvivas.engine.discovery.InterpretationRelation.SUPPORTS}
-   .groupBy{it.hypothesis}
-   .mapNotNull{(claim,interpretations)->
+   .groupBy{it.hypothesis to contextFor(it.signalId)}
+   .mapNotNull{(key,interpretations)->
     val evidenceIds=interpretations.flatMap{it.evidenceIds}.toSet()
     val clues=evidence.filter{it.id in evidenceIds}
-    if(clues.size>=2) claim to clues else null
+    if(clues.size>=2) Triple(key.first,key.second,clues) else null
    }
-   .sortedBy{it.first}
+   .sortedWith(compareBy<Triple<String,String,List<com.historiasvivas.engine.discovery.Evidence>>>{it.first}.thenBy{it.second})
 
-  return interpretedGroups.take(2).mapNotNull{(claim,clues)->
-   val subject=clues.map{it.signalId}.distinct().sorted().joinToString("+")
+  return interpretedGroups.take(2).mapNotNull{(claim,context,clues)->
+   val subject=when{
+    context.startsWith("location:")->context.removePrefix("location:")
+    else->context
+   }
    val existing=story.world.reasoning.hypotheses.values
-    .filter{it.characterId==characterId&&it.claim==claim}
+    .filter{it.characterId==characterId&&it.claim==claim&&it.subject==subject}
     .maxByOrNull{it.revisedTurn}
    val hypothesis=if(existing==null){
     hypotheses.formulate(characterId,subject,claim,clues,character.mind.beliefs,turn)
