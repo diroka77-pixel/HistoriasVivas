@@ -12,7 +12,7 @@ class CausalEventDirector(private val threshold:Int=65,private val cooldownTurns
   val low=story.world.environment.resources.values.filter{it.amount<=it.criticalBelow+10}
   val fauna=story.world.environment.pressures["fauna"]?.intensity?:0
   if(low.isNotEmpty()){
-   val factors=mutableListOf(CausalFactor("resources",35,"Supplies are close to critical"))
+   val factors=mutableListOf(CausalFactor("resources",50,"Supplies are close to critical"))
    if(fauna>=50)factors+=CausalFactor("fauna",20,"Native fauna pressure is high")
    candidates+=EmergentEventProposal("resource-"+(story.turn+1),EmergentEventKind.RESOURCE_CRISIS,factors.sumOf{it.weight},factors,"Independent pressures threaten essential supplies",false)
   }
