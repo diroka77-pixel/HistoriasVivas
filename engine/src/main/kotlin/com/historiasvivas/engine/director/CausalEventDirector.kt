@@ -5,7 +5,11 @@ enum class EmergentEventKind { RESOURCE_CRISIS, EXPEDITION_DANGER, SOCIAL_FRACTU
 data class CausalFactor(val id:String,val weight:Int,val description:String)
 data class EmergentEventProposal(val id:String,val kind:EmergentEventKind,val score:Int,val factors:List<CausalFactor>,val summary:String,val hidden:Boolean=true)
 
-class CausalEventDirector(private val threshold:Int=65,private val cooldownTurns:Long=3){
+class CausalEventDirector(
+ private val threshold:Int=65,
+ private val cooldownTurns:Long=3,
+ private val repetitionWindowTurns:Long=12
+){
  fun propose(story:Story,lastEmergentTurn:Long?=null):EmergentEventProposal?{
   if(lastEmergentTurn!=null && story.turn-lastEmergentTurn<cooldownTurns)return null
   val candidates=mutableListOf<EmergentEventProposal>()
@@ -44,6 +48,16 @@ class CausalEventDirector(private val threshold:Int=65,private val cooldownTurns
    )
    candidates+=EmergentEventProposal("expedition-"+(story.turn+1),EmergentEventKind.EXPEDITION_DANGER,70,factors,"Travel conditions make the current expedition materially dangerous",false)
   }
-  return candidates.filter{it.score>=threshold}.maxByOrNull{it.score}
+  return candidates.filter{it.score>=threshold&&!wasRecentlyMaterialized(story,it.kind)}.maxByOrNull{it.score}
+ }
+
+ private fun wasRecentlyMaterialized(story:Story,kind:EmergentEventKind):Boolean{
+  fun recent(turn:Long)=story.turn>=turn&&story.turn-turn<repetitionWindowTurns
+  return when(kind){
+   EmergentEventKind.SOCIAL_FRACTURE->story.world.hiddenEvents.any{it.id.startsWith("social-")&&recent(it.turn)}
+   EmergentEventKind.RESOURCE_CRISIS->story.memory.recentEvents.any{"resource" in it.tags&&recent(it.turn)}
+   EmergentEventKind.DISCOVERY_OPPORTUNITY->story.memory.recentEvents.any{"discovery" in it.tags&&recent(it.turn)}
+   EmergentEventKind.EXPEDITION_DANGER->story.memory.recentEvents.any{"expedition" in it.tags&&recent(it.turn)}
+  }
  }
 }

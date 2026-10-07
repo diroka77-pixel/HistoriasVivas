@@ -71,4 +71,34 @@ class CausalEventDirectorTest {
   assertNull(CausalEventDirector().propose(story))
  }
 
+ @Test fun unchangedPrivateFractureDoesNotRepeatAfterBasicCooldown(){
+  val traces=mapOf(
+   "a" to com.historiasvivas.engine.character.EmotionalTrace("a","betrayal",salience=90),
+   "b" to com.historiasvivas.engine.character.EmotionalTrace("b","fear",salience=80)
+  )
+  val erik=Character("erik","Erik",mind=com.historiasvivas.engine.character.CharacterMind(emotionalMemory=traces))
+  val prior=com.historiasvivas.engine.offscreen.HiddenEvent("social-16",16,"erik","Prior confrontation",knownBy=setOf("erik"))
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik,"daniel" to Character("daniel","Daniel")),
+   relationships=listOf(Relationship("erik","daniel",trust=-50)),
+   hiddenEvents=listOf(prior)
+  ),turn=20)
+  assertNull(CausalEventDirector().propose(story,lastEmergentTurn=16))
+ }
+
+ @Test fun privateFractureCanReturnAfterLongNarrativeDistance(){
+  val traces=mapOf(
+   "a" to com.historiasvivas.engine.character.EmotionalTrace("a","betrayal",salience=90),
+   "b" to com.historiasvivas.engine.character.EmotionalTrace("b","fear",salience=80)
+  )
+  val erik=Character("erik","Erik",mind=com.historiasvivas.engine.character.CharacterMind(emotionalMemory=traces))
+  val prior=com.historiasvivas.engine.offscreen.HiddenEvent("social-8",8,"erik","Old confrontation",knownBy=setOf("erik"))
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik,"daniel" to Character("daniel","Daniel")),
+   relationships=listOf(Relationship("erik","daniel",trust=-50)),
+   hiddenEvents=listOf(prior)
+  ),turn=20)
+  assertEquals(EmergentEventKind.SOCIAL_FRACTURE,CausalEventDirector().propose(story,lastEmergentTurn=8)?.kind)
+ }
+
 }
