@@ -33,7 +33,7 @@ class TurnEngine(
   val latentIds=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptySet() else (causal.publicEvents.map{it.id}+causal.hiddenEvents.map{it.id}).toSet()
   val hidden=offscreenHidden+causal.hiddenEvents
   val delta=WorldDelta(
-   event,response.proposedFacts,response.proposedConsequences,response.resolvedConsequenceIds,
+   event,response.proposedFacts,response.proposedConsequences+causal.consequences,response.resolvedConsequenceIds,
    response.proposedMindDeltas,response.proposedPerceptionDeltas,hidden,surfaced
   )
   val validation=validator.validate(story,delta)
