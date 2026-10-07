@@ -60,4 +60,13 @@ class DiscoveryEngineTest {
   assertEquals(evidence,revised.evidence.getValue("e1"))
  }
 
+ @Test fun zeroSalienceSignalIsNotAutomaticallyObservableButCanReactivate(){
+  val hidden=WorldSignal("hidden","ruins",sense=SignalSense.TRACE,surface="Nearly erased trace",createdTurn=1,salience=0,persistent=true)
+  val state=DiscoveryState(signals=mapOf(hidden.id to hidden))
+  val engine=DiscoveryEngine()
+  assertTrue(engine.visibleAt(state,"erik","ruins").isEmpty())
+  val changed=engine.reactivate(state,"hidden",2,newSurface="Fresh disturbance exposes the trace",newSalience=45)
+  assertEquals(listOf("hidden"),engine.visibleAt(changed,"erik","ruins").map{it.id})
+ }
+
 }
