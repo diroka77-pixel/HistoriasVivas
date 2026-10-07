@@ -94,7 +94,24 @@ class AutonomousActionExecutor(
     story.copy(world=story.world.copy(characters=story.world.characters+(listenerId to updatedListener),socialKnowledge=knowledge)) to
      AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Warning delivered",event)
    }
-   AutonomousActionKind.PROTECT,AutonomousActionKind.HIDE_EVIDENCE->
+   AutonomousActionKind.HIDE_EVIDENCE->{
+    val location=spatial.locationOf(story.world.spatial,plan.characterId)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Character is not at a stable location")
+    val signal=discovery.visibleAt(story.world.discovery,plan.characterId,location).firstOrNull()
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No observable signal to conceal")
+    val concealed=signal.copy(
+     surface="The remaining traces here are difficult to interpret.",
+     salience=(signal.salience-60).coerceAtLeast(0),
+     persistent=false,
+     revision=signal.revision+1,
+     lastChangedTurn=story.turn
+    )
+    val state=story.world.discovery.copy(signals=story.world.discovery.signals+(signal.id to concealed))
+    val event=StoryEvent(plan.id+"-concealment",story.turn,c.name+" conceals an observable trace",setOf(c.id),setOf("autonomous","concealment"))
+    story.copy(world=story.world.copy(discovery=state)) to
+     AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Observable trace concealed",event)
+   }
+   AutonomousActionKind.PROTECT->
     story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Requires scene/world-specific resolution")
   }
  }
