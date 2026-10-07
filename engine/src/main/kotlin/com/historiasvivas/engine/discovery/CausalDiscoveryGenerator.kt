@@ -15,6 +15,7 @@ class CausalDiscoveryGenerator {
   }
   return signals.distinctBy{it.id}
  }
+ fun fromCompletedJourney(story:Story,j:Journey):WorldSignal=fromJourney(story,j.copy(elapsedUnits=j.elapsedUnits+1,remainingUnits=0))
  private fun fromJourney(story:Story,j:Journey):WorldSignal=WorldSignal(
   id="trace-"+j.characterId+"-"+j.startedTurn,locationId=null,routeFrom=j.from,routeTo=j.to,
   sense=SignalSense.TRACE,surface=surfaceForJourney(j),
