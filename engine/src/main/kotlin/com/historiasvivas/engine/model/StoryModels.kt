@@ -27,7 +27,7 @@ import com.historiasvivas.engine.agency.AutonomousAgencyState
  val id:String,val title:String,val premise:String,
  val world:WorldState=WorldState(),val memory:StoryMemory=StoryMemory(),
  val status:StoryStatus=StoryStatus.ACTIVE,val turn:Long=0,
- val director:DirectorState=DirectorState()
+ val director:DirectorState=DirectorState(),val protagonistId:String="daniel"
 )
 @Serializable data class WorldState(
  val characters:Map<String,Character> = emptyMap(),
