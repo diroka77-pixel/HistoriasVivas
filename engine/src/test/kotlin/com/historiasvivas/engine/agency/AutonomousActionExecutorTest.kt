@@ -58,4 +58,26 @@ class AutonomousActionExecutorTest {
   assertTrue(after.world.discovery.evidence.values.none{it.signalId=="low"&&it.discoveredBy=="erik"})
  }
 
+ @Test fun cautiousWithdrawalStartsPhysicalJourneyAwayFromThreat(){
+  val erik=Character("erik","Erik")
+  val story=Story(
+   "s","Nadir","p",
+   world=WorldState(
+    characters=mapOf("erik" to erik),
+    locations=mapOf("ruins" to Location("ruins","Ruins"),"settlement" to Location("settlement","Settlement"),"forest" to Location("forest","Forest")),
+    spatial=SpatialState(
+     positions=mapOf("erik" to CharacterPosition("erik","ruins")),
+     routes=listOf(Route("ruins","settlement",2),Route("ruins","forest",3))
+    )
+   ),turn=20
+  )
+  val plan=AutonomousActionPlan("withdraw","erik","h",AutonomousActionKind.WITHDRAW,80,targetLocationId="ruins",motivation="Danger",turn=20)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  val journey=after.world.spatial.journeys.getValue("erik")
+  assertEquals("ruins",journey.from)
+  assertNotEquals("ruins",journey.to)
+  assertTrue(journey.to in setOf("forest","settlement"))
+ }
+
 }
