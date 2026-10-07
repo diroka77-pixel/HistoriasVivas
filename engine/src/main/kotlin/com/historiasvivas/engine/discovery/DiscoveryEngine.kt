@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  val sense:SignalSense,val surface:String,val hiddenCause:String?=null,
  val createdTurn:Long,val salience:Int=50,val persistent:Boolean=true,
  val noticedBy:Set<String> = emptySet(),val investigatedBy:Set<String> = emptySet(),val ignoredBy:Set<String> = emptySet(),
- val revision:Int=0,val lastChangedTurn:Long=createdTurn
+ val revision:Int=0,val lastChangedTurn:Long=createdTurn,val relatedEventId:String?=null
 ){
  fun statusFor(characterId:String)=when{
   characterId in investigatedBy->SignalStatus.INVESTIGATED

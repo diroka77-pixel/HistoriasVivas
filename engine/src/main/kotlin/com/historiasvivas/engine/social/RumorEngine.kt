@@ -14,7 +14,8 @@ class RumorEngine {
    id="rumor-"+original.testimonyId+"-"+newSpeakerId+"-"+turn,
    speakerId=newSpeakerId,claim=summary,subject=original.speakerId,turn=turn,
    sourceEvidenceIds=setOf(original.testimonyId),channel=InformationChannel.RUMOR,
-   intent=TestimonyIntent.UNCERTAIN,privateTruth=null,reliability=degraded
+   intent=TestimonyIntent.UNCERTAIN,privateTruth=null,reliability=degraded,
+   relatedEventId=original.relatedEventId
   )
  }
 }

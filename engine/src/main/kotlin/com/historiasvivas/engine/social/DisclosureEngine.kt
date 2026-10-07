@@ -48,7 +48,8 @@ class DisclosureEngine {
   return Testimony(
    id="testimony-"+decision.id,speakerId=decision.speakerId,claim=claim,subject=hypothesis.subject,turn=decision.turn,
    sourceEvidenceIds=hypothesis.supportingEvidenceIds,channel=InformationChannel.DIRECT_TESTIMONY,
-   intent=intent,privateTruth=if(intent==TestimonyIntent.HONEST)null else hypothesis.claim
+   intent=intent,privateTruth=if(intent==TestimonyIntent.HONEST)null else hypothesis.claim,
+   relatedEventId=hypothesis.relatedEventId
   )
  }
 }

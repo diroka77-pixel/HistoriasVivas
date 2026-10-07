@@ -15,7 +15,8 @@ class InvestigationEngine(private val interpreter:InterpretationEngine=Interpret
   }
   val evidence=Evidence(
    id=evidenceId,signalId=signalId,
-   observation=signal.surface,strength=(signal.salience-10).coerceIn(20,80),discoveredTurn=turn,discoveredBy=characterId
+   observation=signal.surface,strength=(signal.salience-10).coerceIn(20,80),discoveredTurn=turn,discoveredBy=characterId,
+   relatedEventId=signal.relatedEventId
   )
   val previous=state.interpretations.values.filter{it.characterId==characterId&&it.signalId==signalId}.maxByOrNull{it.evidenceIds.size}
   val interpretation=if(previous==null)interpreter.initial(characterId,signal,mind,evidence) else interpreter.revise(previous,evidence)

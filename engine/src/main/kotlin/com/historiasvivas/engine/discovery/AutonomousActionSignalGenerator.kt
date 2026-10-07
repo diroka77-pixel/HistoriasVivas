@@ -18,7 +18,8 @@ class AutonomousActionSignalGenerator {
      sense=SignalSense.TRACE,
      surface="Fresh signs show that someone has just entered the route",
      hiddenCause="autonomous-travel:"+plan.characterId+":"+plan.id,
-     createdTurn=story.turn,salience=55,persistent=true
+     createdTurn=story.turn,salience=55,persistent=true,
+     relatedEventId="hidden-"+result.event.id
     )
    }
    else->null
