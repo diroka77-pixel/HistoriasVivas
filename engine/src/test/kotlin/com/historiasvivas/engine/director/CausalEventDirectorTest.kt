@@ -56,4 +56,19 @@ class CausalEventDirectorTest {
   assertEquals(EmergentEventKind.EXPEDITION_DANGER,CausalEventDirector().propose(story)?.kind)
  }
 
+ @Test fun deadObserverDoesNotKeepFullyResolvedSignalsOpen(){
+  val signals=mapOf(
+   "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Pulse",createdTurn=1,salience=80,investigatedBy=setOf("erik")),
+   "b" to WorldSignal("b","ruins",sense=SignalSense.TRACE,surface="Marks",createdTurn=2,salience=75,investigatedBy=setOf("erik"))
+  )
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf(
+    "erik" to Character("erik","Erik"),
+    "old" to Character("old","Old observer",alive=false)
+   ),
+   discovery=DiscoveryState(signals=signals)
+  ),turn=5)
+  assertNull(CausalEventDirector().propose(story))
+ }
+
 }
