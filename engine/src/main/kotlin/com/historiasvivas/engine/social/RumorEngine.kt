@@ -3,7 +3,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class SocialKnowledgeState(
  val testimonies:Map<String,Testimony> = emptyMap(),
- val heardClaims:Map<String,HeardClaim> = emptyMap()
+ val heardClaims:Map<String,HeardClaim> = emptyMap(),
+ val disclosureHistory:Map<String,DisclosureDecision> = emptyMap()
 )
 
 class RumorEngine {
