@@ -64,11 +64,27 @@ class OffscreenWorldTest {
    id="rumor-1",speakerId="elena",claim="Erik entered the ruins",subject="erik",turn=6,
    channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN,relatedEventId=event.id
   )
+  val heard=SocialInformationEngine().hear(rumor,"daniel",CharacterMind())
   val discovery=Discovery("h1","daniel",DiscoveryChannel.RUMOR,"Daniel hears the rumor",sourceId=rumor.id)
   val updated=KnowledgeGate().discover(
-   listOf(event),discovery,DiscoverySources(testimonies=mapOf(rumor.id to rumor))
+   listOf(event),discovery,DiscoverySources(
+    testimonies=mapOf(rumor.id to rumor),
+    heardClaims=mapOf(rumor.id+":"+heard.listenerId to heard)
+   )
   )
   assertEquals(1,KnowledgeGate().visible(updated,"daniel").size)
+ }
+ @Test fun existingButUnheardTestimonyCannotRevealHiddenEvent(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val testimony=Testimony(
+   id="t1",speakerId="elena",claim="Erik entered the ruins",subject="erik",turn=6,
+   channel=InformationChannel.DIRECT_TESTIMONY,relatedEventId=event.id
+  )
+  val discovery=Discovery(event.id,"daniel",DiscoveryChannel.TOLD,"Elena allegedly told Daniel",sourceId=testimony.id)
+  val updated=KnowledgeGate().discover(
+   listOf(event),discovery,DiscoverySources(testimonies=mapOf(testimony.id to testimony))
+  )
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
  }
  @Test fun sourceLinkedToAnotherEventCannotRevealTarget(){
   val target=HiddenEvent("h-target",5,"erik","Erik entered the ruins")
