@@ -19,8 +19,8 @@ class CausalEventValidator {
    EmergentEventKind.RESOURCE_CRISIS -> story.world.environment.resources.values.any{it.amount<=it.criticalBelow+10}
    EmergentEventKind.SOCIAL_FRACTURE -> story.world.relationships.any{it.trust<=-35}
    EmergentEventKind.DISCOVERY_OPPORTUNITY -> story.world.discovery.signals.values.count{signal->
-    signal.persistent&&signal.salience>=65&&story.world.characters.keys.any{
-     signal.statusFor(it)!=com.historiasvivas.engine.discovery.SignalStatus.INVESTIGATED
+    signal.persistent&&signal.salience>=65&&story.world.characters.values.any{character->
+     character.alive&&signal.statusFor(character.id)!=com.historiasvivas.engine.discovery.SignalStatus.INVESTIGATED
     }
    }>=2
    EmergentEventKind.EXPEDITION_DANGER -> story.world.spatial.journeys.isNotEmpty()&&maxOf(
