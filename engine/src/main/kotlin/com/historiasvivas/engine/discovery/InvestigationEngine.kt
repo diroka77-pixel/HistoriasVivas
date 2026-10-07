@@ -6,8 +6,15 @@ data class InvestigationResult(val state:DiscoveryState,val evidence:Evidence,va
 class InvestigationEngine(private val interpreter:InterpretationEngine=InterpretationEngine()){
  fun investigate(state:DiscoveryState,signalId:String,characterId:String,mind:CharacterMind,turn:Long):InvestigationResult?{
   val signal=state.signals[signalId]?:return null
+  val baseEvidenceId="evidence-"+signalId+"-"+characterId+"-"+turn
+  var evidenceId=baseEvidenceId
+  var suffix=2
+  while(evidenceId in state.evidence){
+   evidenceId=baseEvidenceId+"-"+suffix
+   suffix++
+  }
   val evidence=Evidence(
-   id="evidence-"+signalId+"-"+characterId+"-"+turn,signalId=signalId,
+   id=evidenceId,signalId=signalId,
    observation=signal.surface,strength=(signal.salience-10).coerceIn(20,80),discoveredTurn=turn,discoveredBy=characterId
   )
   val previous=state.interpretations.values.filter{it.characterId==characterId&&it.signalId==signalId}.maxByOrNull{it.evidenceIds.size}
