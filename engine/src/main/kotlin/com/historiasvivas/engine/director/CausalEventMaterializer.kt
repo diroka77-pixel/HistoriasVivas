@@ -29,7 +29,20 @@ class CausalEventMaterializer {
     val hidden=HiddenEvent(proposal.id,story.turn+1,actor.id,proposal.summary,knownBy=setOf(actor.id))
     MaterializedEmergentEvent(hiddenEvent=hidden,source=proposal)
    }
-   else -> null
+   EmergentEventKind.DISCOVERY_OPPORTUNITY->{
+    val signals=story.world.discovery.signals.values.filter{it.persistent&&it.salience>=65}
+    if(signals.size<2)null else {
+     val participants=signals.flatMap{it.noticedBy}.toSet()
+     val event=StoryEvent(proposal.id,story.turn+1,proposal.summary,participants=participants,tags=setOf("emergent","discovery"))
+     MaterializedEmergentEvent(event=event,source=proposal)
+    }
+   }
+   EmergentEventKind.EXPEDITION_DANGER->{
+    val journey=story.world.spatial.journeys.values.sortedBy{it.characterId}.firstOrNull()?:return null
+    val event=StoryEvent(proposal.id,story.turn+1,proposal.summary,participants=setOf(journey.characterId),tags=setOf("emergent","expedition","danger"))
+    val consequence=Consequence(proposal.id+"-"+journey.characterId,event.id,"The expedition remains exposed to dangerous travel conditions",story.turn+2)
+    MaterializedEmergentEvent(event=event,consequences=listOf(consequence),source=proposal)
+   }
   }
  }
 }
