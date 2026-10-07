@@ -53,13 +53,18 @@ class ProvenancePipelineTest {
 
   val heard=SocialInformationEngine().hear(testimony,"daniel",daniel.mind)
   val rumor=RumorEngine().relay(heard,"daniel","maya",11)
+  val heardByMaya=SocialInformationEngine().hear(rumor,"maya",CharacterMind())
   assertEquals(hidden.id,heard.relatedEventId)
   assertEquals(hidden.id,rumor.relatedEventId)
+  assertEquals(hidden.id,heardByMaya.relatedEventId)
 
   val discovered=KnowledgeGate().discover(
    listOf(hidden),
    Discovery(hidden.id,"maya",DiscoveryChannel.RUMOR,"Daniel relays Elena's account",sourceId=rumor.id),
-   DiscoverySources(testimonies=mapOf(rumor.id to rumor))
+   DiscoverySources(
+    testimonies=mapOf(rumor.id to rumor),
+    heardClaims=mapOf(rumor.id+":"+heardByMaya.listenerId to heardByMaya)
+   )
   )
   assertEquals(listOf(hidden.id),KnowledgeGate().visible(discovered,"maya").map{it.id})
  }
