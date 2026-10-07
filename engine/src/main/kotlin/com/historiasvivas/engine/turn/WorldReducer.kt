@@ -38,7 +38,7 @@ class WorldReducer(
     existing==null -> discovery.copy(signals=discovery.signals+(generated.id to generated))
     generated.createdTurn>existing.lastChangedTurn &&
      (generated.surface!=existing.surface || generated.salience!=existing.salience || generated.hiddenCause!=existing.hiddenCause) ->
-      discoveryEngine.reactivate(discovery,generated.id,generated.createdTurn,generated.surface,generated.salience)
+      discoveryEngine.reactivate(discovery,generated.id,generated.createdTurn,generated.surface,generated.salience,generated.hiddenCause)
     else -> discovery
    }
   }
