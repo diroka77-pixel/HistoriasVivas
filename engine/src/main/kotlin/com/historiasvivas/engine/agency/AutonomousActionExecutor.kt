@@ -98,8 +98,8 @@ class AutonomousActionExecutor(
    AutonomousActionKind.HIDE_EVIDENCE->{
     val location=spatial.locationOf(story.world.spatial,plan.characterId)
      ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Character is not at a stable location")
-    val visible=discovery.visibleAt(story.world.discovery,plan.characterId,location)
-    val signal=plan.targetSignalId?.let{id->visible.firstOrNull{it.id==id}}
+    val signal=plan.targetSignalId?.let{story.world.discovery.signals[it]}
+     ?.takeIf{it.locationId==location&&it.salience>0}
      ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No hypothesis-related signal to conceal")
     val concealed=signal.copy(
      surface="The remaining traces here are difficult to interpret.",
