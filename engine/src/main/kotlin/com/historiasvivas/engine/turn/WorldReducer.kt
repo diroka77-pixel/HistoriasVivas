@@ -21,7 +21,8 @@ class WorldReducer(
   require(delta.consequencesToSchedule.none{it.id in ids}){"Duplicate consequence id"}
   val environmentTick=environmentSimulator.tick(story)
   val generatedSignals=discoveryGenerator.generate(story)
-  val discovery=story.world.discovery.copy(signals=story.world.discovery.signals+generatedSignals.associateBy{it.id})
+  val newSignals=generatedSignals.filterNot{it.id in story.world.discovery.signals}.associateBy{it.id}
+  val discovery=story.world.discovery.copy(signals=story.world.discovery.signals+newSignals)
   val consequences=story.world.pendingConsequences.map{if(it.id in delta.consequencesToResolve)it.copy(resolved=true)else it}+delta.consequencesToSchedule
   val characters=story.world.characters.toMutableMap()
   delta.mindDeltas.forEach{d->characters[d.characterId]?.let{characters[d.characterId]=mindReducer.apply(it,d)}}
