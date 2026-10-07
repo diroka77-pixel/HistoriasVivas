@@ -133,4 +133,31 @@ class AutonomousActionExecutorTest {
   assertEquals(evidence,after.world.discovery.evidence.getValue("e"))
  }
 
+ @Test fun protectStartsJourneyTowardReachableCharacter(){
+  val erik=Character("erik","Erik")
+  val elena=Character("elena","Elena")
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik,"elena" to elena),
+   spatial=SpatialState(
+    positions=mapOf("erik" to CharacterPosition("erik","ruins"),"elena" to CharacterPosition("elena","settlement")),
+    routes=listOf(Route("ruins","settlement",3))
+   )
+  ),turn=15)
+  val plan=AutonomousActionPlan("protect","erik","h",AutonomousActionKind.PROTECT,80,targetCharacterId="elena",motivation="Protect Elena",turn=15)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  assertEquals("settlement",after.world.spatial.journeys.getValue("erik").to)
+ }
+ @Test fun protectDoesNotInventActionWhenAlreadyTogether(){
+  val erik=Character("erik","Erik")
+  val elena=Character("elena","Elena")
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik,"elena" to elena),
+   spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","settlement"),"elena" to CharacterPosition("elena","settlement")))
+  ),turn=15)
+  val plan=AutonomousActionPlan("protect","erik","h",AutonomousActionKind.PROTECT,80,targetCharacterId="elena",motivation="Protect Elena",turn=15)
+  val (_,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.DEFERRED,result.status)
+ }
+
 }
