@@ -9,6 +9,13 @@ class PersonalityGrowthEngineTest {
   val evolved=PersonalityGrowthEngine().evolve(erik)
   assertTrue((evolved.mind.personality.dimensions["caution"]?:0) in 1..3)
  }
+ @Test fun sameEmotionalTracesDoNotShiftPersonalityTwice(){
+  val trace=EmotionalTrace("fear-1","A terrifying encounter",mapOf("fear" to 100),100)
+  val erik=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("caution" to 0)),emotionalMemory=mapOf(trace.eventId to trace)))
+  val once=PersonalityGrowthEngine().evolve(erik)
+  val twice=PersonalityGrowthEngine().evolve(once)
+  assertEquals(once.mind.personality.dimensions["caution"],twice.mind.personality.dimensions["caution"])
+ }
  @Test fun personalityChangesAutonomousResponse(){
   val perception=Perception("erik","daniel",mapOf("dangerous" to 60,"trustworthy" to -50))
   val cautious=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("caution" to 80,"courage" to -20)),perceptions=mapOf("daniel" to perception)))
