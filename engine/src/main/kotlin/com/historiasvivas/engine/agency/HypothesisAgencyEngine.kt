@@ -18,7 +18,7 @@ class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),p
   val p=c.mind.personality.dimensions
   val courage=p["courage"]?:0; val caution=p["caution"]?:0; val compassion=p["compassion"]?:0; val secrecy=p["secrecy"]?:0
   val base=(hypothesis.confidence+courage/4-caution/6).coerceIn(10,95)
-  val targetLocation=story.world.locations.keys.firstOrNull{hypothesis.subject.contains(it,true)}
+  val spatialLocationIds=(story.world.spatial.positions.values.map{it.locationId}+story.world.spatial.routes.flatMap{listOf(it.from,it.to)}).toSet()\n  val targetLocation=(story.world.locations.keys+spatialLocationIds).distinct().firstOrNull{hypothesis.subject.contains(it,true)}
   val currentLocation=spatial.locationOf(story.world.spatial,characterId)
   val valued=story.world.relationships.asSequence()
    .filter{it.fromCharacterId==characterId&&story.world.characters[it.toCharacterId]?.alive==true}
