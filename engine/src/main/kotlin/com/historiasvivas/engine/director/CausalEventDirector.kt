@@ -23,7 +23,7 @@ class CausalEventDirector(private val threshold:Int=65,private val cooldownTurns
    candidates+=EmergentEventProposal("social-"+(story.turn+1),EmergentEventKind.SOCIAL_FRACTURE,70,factors,"Accumulated distrust makes confrontation plausible")
   }
   val unresolvedSignals=story.world.discovery.signals.values.filter{signal->
-   signal.persistent&&signal.salience>=65&&story.world.characters.keys.any{signal.statusFor(it)!=com.historiasvivas.engine.discovery.SignalStatus.INVESTIGATED}
+   signal.persistent&&signal.salience>=65&&story.world.characters.values.any{it.alive&&signal.statusFor(it.id)!=com.historiasvivas.engine.discovery.SignalStatus.INVESTIGATED}
   }
   if(unresolvedSignals.size>=2){
    val factors=listOf(
