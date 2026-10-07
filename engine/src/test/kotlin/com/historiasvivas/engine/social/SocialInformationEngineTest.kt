@@ -19,4 +19,23 @@ class SocialInformationEngineTest {
   val engine=SocialInformationEngine()
   assertTrue(engine.hear(direct,"daniel",mind).confidence>engine.hear(rumor,"daniel",mind).confidence)
  }
+ @Test fun multiHopRumorCannotRegainReliabilityFromTrustedRelays(){
+  val engine=SocialInformationEngine()
+  val rumor=RumorEngine()
+  val trustingMind=CharacterMind(perceptions=mapOf(
+   "b" to Perception("b",impressions=mapOf("trust" to 90)),
+   "c" to Perception("c",impressions=mapOf("trust" to 90))
+  ))
+  val first=HeardClaim("source","b","a","There is something beneath the ruins",70,1,InformationChannel.DIRECT_TESTIMONY)
+  val bToC=rumor.relay(first,"b","c",2)
+  val heardByC=engine.hear(bToC,"c",trustingMind)
+  assertTrue(heardByC.confidence<=55)
+  val cToD=rumor.relay(heardByC,"c","d",3)
+  val heardByD=engine.hear(cToD,"d",trustingMind)
+  assertTrue(heardByD.confidence<=40)
+  assertTrue(heardByD.confidence<heardByC.confidence)
+  assertNull(bToC.privateTruth)
+  assertNull(cToD.privateTruth)
+ }
+
 }
