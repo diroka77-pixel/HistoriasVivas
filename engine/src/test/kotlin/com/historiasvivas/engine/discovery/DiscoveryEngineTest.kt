@@ -26,4 +26,26 @@ class DiscoveryEngineTest {
   assertEquals(listOf("tracks"),engine.visibleOnJourney(ignored,"elena","settlement","ruins").map{it.id})
  }
 
+ @Test fun ignoredPersistentSignalCanReturnOnlyAfterRealRevision(){
+  val signal=WorldSignal("pulse","settlement",sense=SignalSense.RADIO,surface="A weak repeating pulse",createdTurn=8)
+  val engine=DiscoveryEngine()
+  val ignored=engine.ignore(DiscoveryState(mapOf(signal.id to signal)),signal.id,"daniel")
+  assertTrue(engine.visibleAt(ignored,"daniel","settlement").isEmpty())
+  val unchanged=engine.reactivate(ignored,signal.id,8)
+  assertTrue(engine.visibleAt(unchanged,"daniel","settlement").isEmpty())
+  val changed=engine.reactivate(ignored,signal.id,12,newSurface="The pulse is stronger and now carries a pattern",newSalience=85)
+  assertEquals(1,changed.signals[signal.id]!!.revision)
+  assertEquals(12,changed.signals[signal.id]!!.lastChangedTurn)
+  assertEquals("The pulse is stronger and now carries a pattern",engine.visibleAt(changed,"daniel","settlement").single().surface)
+ }
+
+ @Test fun nonPersistentIgnoredSignalCannotBeReactivated(){
+  val signal=WorldSignal("echo","ruins",sense=SignalSense.SOUND,surface="A single metallic echo",createdTurn=3,persistent=false)
+  val engine=DiscoveryEngine()
+  val ignored=engine.ignore(DiscoveryState(mapOf(signal.id to signal)),signal.id,"daniel")
+  val attempted=engine.reactivate(ignored,signal.id,9,newSurface="Another echo")
+  assertEquals(SignalStatus.IGNORED,attempted.signals[signal.id]!!.statusFor("daniel"))
+  assertTrue(engine.visibleAt(attempted,"daniel","ruins").isEmpty())
+ }
+
 }
