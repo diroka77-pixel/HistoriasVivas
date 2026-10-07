@@ -24,13 +24,10 @@ class WorldReducer(
   val environmentTick=environmentSimulator.tick(story)
   val advancedSpatial=spatialEngine.advanceJourneys(story.world.spatial,1,story.turn+1)
   val causalSnapshot=story.copy(turn=story.turn+1,world=story.world.copy(environment=environmentTick.next,spatial=advancedSpatial))
-  val generatedSignals=(discoveryGenerator.generate(causalSnapshot)+story.world.spatial.journeys.values.filter{it.remainingUnits<=1}.map{journey->
-   com.historiasvivas.engine.discovery.WorldSignal(
-    id="trace-"+journey.characterId+"-"+journey.startedTurn,locationId=null,routeFrom=journey.from,routeTo=journey.to,
-    sense=com.historiasvivas.engine.discovery.SignalSense.TRACE,surface="Signs of recent passage disturb the route",
-    hiddenCause="journey:"+journey.characterId+":"+journey.from+":"+journey.to,createdTurn=story.turn+1,salience=55,persistent=true
-   )
-  }).distinctBy{it.id}
+  val completedJourneySignals=story.world.spatial.journeys.values
+   .filter{it.remainingUnits<=1}
+   .map{discoveryGenerator.fromCompletedJourney(causalSnapshot,it)}
+  val generatedSignals=(discoveryGenerator.generate(causalSnapshot)+completedJourneySignals).distinctBy{it.id}
   var discovery=story.world.discovery
   generatedSignals.forEach{generated->
    val existing=discovery.signals[generated.id]
