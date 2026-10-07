@@ -33,7 +33,8 @@ class AutonomousActionExecutor(
    }
    AutonomousActionKind.INVESTIGATE->{
     val location=spatial.locationOf(story.world.spatial,plan.characterId)
-    val signal=discovery.visibleAt(story.world.discovery,plan.characterId,location).firstOrNull()
+    val visible=discovery.visibleAt(story.world.discovery,plan.characterId,location)
+    val signal=plan.targetSignalId?.let{id->visible.firstOrNull{it.id==id}}?:visible.firstOrNull()
      ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No observable signal to investigate")
     val outcome=investigation.investigate(story.world.discovery,signal.id,plan.characterId,c.mind,story.turn)
      ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Investigation could not resolve")
@@ -97,8 +98,9 @@ class AutonomousActionExecutor(
    AutonomousActionKind.HIDE_EVIDENCE->{
     val location=spatial.locationOf(story.world.spatial,plan.characterId)
      ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Character is not at a stable location")
-    val signal=discovery.visibleAt(story.world.discovery,plan.characterId,location).firstOrNull()
-     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No observable signal to conceal")
+    val visible=discovery.visibleAt(story.world.discovery,plan.characterId,location)
+    val signal=plan.targetSignalId?.let{id->visible.firstOrNull{it.id==id}}
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No hypothesis-related signal to conceal")
     val concealed=signal.copy(
      surface="The remaining traces here are difficult to interpret.",
      salience=(signal.salience-60).coerceAtLeast(0),
