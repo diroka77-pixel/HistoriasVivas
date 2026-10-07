@@ -9,7 +9,7 @@ class LocalNarrativePromptBuilder {
   appendLine()
   appendLine("PREMISA: " + packet.player.premise)
   appendLine("HECHOS VISIBLES: " + packet.player.visibleFacts.joinToString(" | "))
-  appendLine("SECRETOS CONOCIDOS: " + packet.player.knownSecrets.joinToString(" | ") { it.description })
+  appendLine("SECRETOS CONOCIDOS: " + packet.player.knownSecrets.joinToString(" | ") { it.truth })
   appendLine("EVENTOS RELEVANTES/RECIENTES: " + packet.player.recentVisibleEvents.joinToString(" | ") { it.summary })
   appendLine("PESO DE LA ESCENA: " + packet.player.narrativeBeat.weight)
   appendLine("MODO: " + packet.player.narrativeBeat.mode)
