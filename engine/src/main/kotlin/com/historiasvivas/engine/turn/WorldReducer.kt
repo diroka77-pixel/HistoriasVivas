@@ -4,12 +4,14 @@ import com.historiasvivas.engine.character.PersonalityGrowthEngine
 import com.historiasvivas.engine.memory.MemoryEngine
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.world.EnvironmentSimulator
+import com.historiasvivas.engine.spatial.SpatialEngine
 
 class WorldReducer(
  private val memoryEngine:MemoryEngine=MemoryEngine(),
  private val mindReducer:CharacterMindReducer=CharacterMindReducer(),
  private val growthEngine:PersonalityGrowthEngine=PersonalityGrowthEngine(),
- private val environmentSimulator:EnvironmentSimulator=EnvironmentSimulator()
+ private val environmentSimulator:EnvironmentSimulator=EnvironmentSimulator(),
+ private val spatialEngine:SpatialEngine=SpatialEngine()
 ){
  fun apply(story:Story,delta:WorldDelta):Story{
   require(delta.event.turn==story.turn+1){"Event turn must advance exactly one turn"}
@@ -30,6 +32,7 @@ class WorldReducer(
     pendingConsequences=consequences,
     hiddenEvents=(story.world.hiddenEvents+delta.hiddenEventsToAdd).distinctBy{it.id},
     environment=environmentTick.next,
+    spatial=spatialEngine.advanceJourneys(story.world.spatial,1,story.turn+1),
     worldClock=story.world.worldClock+1
    )
   )
