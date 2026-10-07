@@ -8,7 +8,7 @@ import com.historiasvivas.engine.discovery.DiscoveryEngine
 @Serializable enum class AutonomousActionKind { INVESTIGATE, TRAVEL, WARN, PROTECT, HIDE_EVIDENCE, WITHDRAW }
 @Serializable data class AutonomousActionPlan(
  val id:String,val characterId:String,val hypothesisId:String,val kind:AutonomousActionKind,
- val priority:Int,val targetLocationId:String?=null,val targetCharacterId:String?=null,val motivation:String,val turn:Long
+ val priority:Int,val targetLocationId:String?=null,val targetCharacterId:String?=null,val targetSignalId:String?=null,val motivation:String,val turn:Long
 )
 
 class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),private val discovery:DiscoveryEngine=DiscoveryEngine()) {
@@ -42,9 +42,13 @@ class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),p
    AutonomousActionKind.WARN->warnTarget
    else->null
   }
+  val hypothesisSignalIds=hypothesis.supportingEvidenceIds.mapNotNull{story.world.discovery.evidence[it]?.signalId}.toSet()
+  val targetSignal=if(kind==AutonomousActionKind.INVESTIGATE||kind==AutonomousActionKind.HIDE_EVIDENCE)
+   discovery.visibleAt(story.world.discovery,characterId,currentLocation).firstOrNull{it.id in hypothesisSignalIds}?.id
+  else null
   return AutonomousActionPlan(
    "auto-"+characterId+"-"+hypothesis.id+"-"+story.turn,characterId,hypothesis.id,kind,base,
-   targetLocationId=targetLocation,targetCharacterId=targetCharacter,
+   targetLocationId=targetLocation,targetCharacterId=targetCharacter,targetSignalId=targetSignal,
    motivation="Acts on private hypothesis: "+hypothesis.claim,turn=story.turn
   )
  }
