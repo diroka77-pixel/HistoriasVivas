@@ -90,4 +90,17 @@ class CausalWorldEngineTest {
   assertFalse(CausalEventValidator().validate(story,candidate).accepted)
  }
 
+ @Test fun deadObserversAreNotParticipantsInDiscoveryOpportunity(){
+  val signals=mapOf(
+   "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Pulse",createdTurn=1,salience=80,noticedBy=setOf("erik","ghost")),
+   "b" to WorldSignal("b","ruins",sense=SignalSense.TRACE,surface="Marks",createdTurn=2,salience=75,noticedBy=setOf("ghost"))
+  )
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to Character("erik","Erik"),"ghost" to Character("ghost","Ghost",alive=false)),
+   discovery=DiscoveryState(signals=signals)
+  ),turn=5)
+  val event=CausalWorldEngine().advance(story).publicEvents.single()
+  assertEquals(setOf("erik"),event.participants)
+ }
+
 }
