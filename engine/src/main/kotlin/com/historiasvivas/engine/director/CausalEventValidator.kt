@@ -18,7 +18,15 @@ class CausalEventValidator {
   val stillCausal=when(candidate.source.kind){
    EmergentEventKind.RESOURCE_CRISIS -> story.world.environment.resources.values.any{it.amount<=it.criticalBelow+10}
    EmergentEventKind.SOCIAL_FRACTURE -> story.world.relationships.any{it.trust<=-35}
-   else -> true
+   EmergentEventKind.DISCOVERY_OPPORTUNITY -> story.world.discovery.signals.values.count{signal->
+    signal.persistent&&signal.salience>=65&&story.world.characters.keys.any{
+     signal.statusFor(it)!=com.historiasvivas.engine.discovery.SignalStatus.INVESTIGATED
+    }
+   }>=2
+   EmergentEventKind.EXPEDITION_DANGER -> story.world.spatial.journeys.isNotEmpty()&&maxOf(
+    story.world.environment.pressures["fauna"]?.intensity?:0,
+    story.world.environment.pressures["weather"]?.intensity?:0
+   )>=60
   }
   if(!stillCausal)errors+="Original causal conditions no longer hold"
   return CausalValidation(errors.isEmpty(),errors)
