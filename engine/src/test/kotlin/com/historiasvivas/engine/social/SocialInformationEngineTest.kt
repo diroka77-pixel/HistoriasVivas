@@ -23,8 +23,8 @@ class SocialInformationEngineTest {
   val engine=SocialInformationEngine()
   val rumor=RumorEngine()
   val trustingMind=CharacterMind(perceptions=mapOf(
-   "b" to Perception("b",impressions=mapOf("trust" to 90)),
-   "c" to Perception("c",impressions=mapOf("trust" to 90))
+   "b" to Perception("listener","b",impressions=mapOf("trust" to 90)),
+   "c" to Perception("listener","c",impressions=mapOf("trust" to 90))
   ))
   val first=HeardClaim("source","b","a","There is something beneath the ruins",70,1,InformationChannel.DIRECT_TESTIMONY)
   val bToC=rumor.relay(first,"b","c",2)
