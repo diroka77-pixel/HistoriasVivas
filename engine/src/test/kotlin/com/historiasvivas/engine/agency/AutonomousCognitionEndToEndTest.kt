@@ -42,7 +42,7 @@ class AutonomousCognitionEndToEndTest {
   val inference=AutonomousReasoningEngine().infer(story,"erik").single()
   assertEquals("erik",inference.hypothesis.characterId)
   assertEquals(2,inference.hypothesis.supportingEvidenceIds.size)
-  val plan=HypothesisAgencyEngine().plan(story,"erik",inference.hypothesis)!!
+  val plan=HypothesisAgencyEngine().plan(story,"erik",strengthened)!!
   val (acted,result)=AutonomousActionExecutor().execute(story,plan)
   assertEquals("erik",plan.characterId)
   assertEquals(inference.hypothesis.id,plan.hypothesisId)
