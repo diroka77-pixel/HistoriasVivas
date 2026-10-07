@@ -16,6 +16,7 @@ class TurnEngine(
  private val offscreen:OffscreenSimulator=OffscreenSimulator(),
  private val causalWorld:CausalWorldEngine=CausalWorldEngine(),
  private val pacing:EmergentPacingDirector=EmergentPacingDirector(),
+ private val latentDirector:LatentEventDirector=LatentEventDirector(),
  private val autonomousScheduler:AutonomousTurnScheduler=AutonomousTurnScheduler(),
  private val spatial:SpatialEngine=SpatialEngine()
 ){
@@ -35,7 +36,11 @@ class TurnEngine(
   val offscreenHidden=offscreen.plan(story,present,maxActions=2).map{it.hiddenEvent}
   val causal=causalWorld.advance(story,story.director.lastEmergentTurn)
   val pacingDecision=pacing.decide(story,causal,context.narrativeBeat.mode)
-  val surfaced=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW)causal.publicEvents else emptyList()
+  val currentSurfaced=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW)causal.publicEvents else emptyList()
+  val resurfacing=latentDirector.choose(story,context.narrativeBeat.mode,currentSurfaced.isNotEmpty())
+  val resurfaced=listOfNotNull(resurfacing.event)
+  val surfaced=currentSurfaced+resurfaced
+  val consumedLatentIds=resurfaced.map{it.id}.toSet()
   val latentPublic=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptyMap() else causal.publicEvents.associateBy{it.id}
   val latentIds=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptySet() else (causal.publicEvents.map{it.id}+causal.hiddenEvents.map{it.id}).toSet()
   val hidden=offscreenHidden+causal.hiddenEvents
@@ -49,8 +54,8 @@ class TurnEngine(
   val (autonomousStory,_)=autonomousScheduler.run(reduced,present,maxCharacters=1)
   val updatedDirector=autonomousStory.director.copy(
    lastEmergentTurn=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) causal.emergentTurn?:autonomousStory.director.lastEmergentTurn else autonomousStory.director.lastEmergentTurn,
-   latentEmergentEventIds=autonomousStory.director.latentEmergentEventIds+latentIds,
-   latentEmergentEvents=autonomousStory.director.latentEmergentEvents+latentPublic
+   latentEmergentEventIds=(autonomousStory.director.latentEmergentEventIds+latentIds)-consumedLatentIds,
+   latentEmergentEvents=(autonomousStory.director.latentEmergentEvents+latentPublic)-consumedLatentIds
   )
   return TurnResult(autonomousStory.copy(director=updatedDirector),response.prose,delta)
  }
