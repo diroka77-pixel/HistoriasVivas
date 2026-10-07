@@ -22,8 +22,15 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
 
   return interpretedGroups.take(2).mapNotNull{(claim,clues)->
    val subject=clues.map{it.signalId}.distinct().sorted().joinToString("+")
-   hypotheses.formulate(characterId,subject,claim,clues,character.mind.beliefs,turn)
-    ?.let{AutonomousInference(characterId,it)}
+   val existing=story.world.reasoning.hypotheses.values
+    .filter{it.characterId==characterId&&it.claim==claim}
+    .maxByOrNull{it.revisedTurn}
+   val hypothesis=if(existing==null){
+    hypotheses.formulate(characterId,subject,claim,clues,character.mind.beliefs,turn)
+   }else{
+    hypotheses.update(existing,clues,emptyList(),turn)
+   }
+   hypothesis?.let{AutonomousInference(characterId,it)}
   }
  }
 }
