@@ -15,7 +15,7 @@ class OffscreenWorldTest {
  }
  @Test fun existingEvidenceOwnedByDiscovererCanRevealHiddenEvent(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
-  val evidence=Evidence("evidence-blood-1","blood-trace","Blood near the entrance",70,7,"daniel")
+  val evidence=Evidence("evidence-blood-1","blood-trace","Blood near the entrance",70,7,"daniel",relatedEventId=event.id)
   val gate=KnowledgeGate()
   val updated=gate.discover(
    listOf(event),
@@ -34,12 +34,11 @@ class OffscreenWorldTest {
  }
  @Test fun unsupportedClaimCannotRevealHiddenEvent(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
-  val gate=KnowledgeGate()
-  val unchanged=gate.discover(
+  val unchanged=KnowledgeGate().discover(
    listOf(event),
    Discovery("h1","daniel",DiscoveryChannel.RUMOR,"Someone says Erik entered the ruins")
   )
-  assertTrue(gate.visible(unchanged,"daniel").isEmpty())
+  assertTrue(KnowledgeGate().visible(unchanged,"daniel").isEmpty())
  }
  @Test fun inventedSourceIdCannotRevealHiddenEvent(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
@@ -51,7 +50,7 @@ class OffscreenWorldTest {
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
   val testimony=Testimony(
    id="t1",speakerId="elena",claim="Erik entered the ruins",subject="erik",turn=6,
-   channel=InformationChannel.DIRECT_TESTIMONY
+   channel=InformationChannel.DIRECT_TESTIMONY,relatedEventId=event.id
   )
   val discovery=Discovery("h1","daniel",DiscoveryChannel.RUMOR,"A rumor reaches Daniel",sourceId=testimony.id)
   val updated=KnowledgeGate().discover(
@@ -59,11 +58,11 @@ class OffscreenWorldTest {
   )
   assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
  }
- @Test fun registeredRumorCanRevealHiddenEvent(){
+ @Test fun registeredRumorCanRevealItsLinkedHiddenEvent(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
   val rumor=Testimony(
    id="rumor-1",speakerId="elena",claim="Erik entered the ruins",subject="erik",turn=6,
-   channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN
+   channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN,relatedEventId=event.id
   )
   val discovery=Discovery("h1","daniel",DiscoveryChannel.RUMOR,"Daniel hears the rumor",sourceId=rumor.id)
   val updated=KnowledgeGate().discover(
@@ -71,9 +70,22 @@ class OffscreenWorldTest {
   )
   assertEquals(1,KnowledgeGate().visible(updated,"daniel").size)
  }
+ @Test fun sourceLinkedToAnotherEventCannotRevealTarget(){
+  val target=HiddenEvent("h-target",5,"erik","Erik entered the ruins")
+  val unrelated=HiddenEvent("h-other",4,"elena","Elena repaired the radio")
+  val testimony=Testimony(
+   id="t-other",speakerId="elena",claim="The radio works",subject="radio",turn=6,
+   channel=InformationChannel.DIRECT_TESTIMONY,relatedEventId=unrelated.id
+  )
+  val discovery=Discovery(target.id,"daniel",DiscoveryChannel.TOLD,"Elena told Daniel about Erik",sourceId=testimony.id)
+  val updated=KnowledgeGate().discover(
+   listOf(target,unrelated),discovery,DiscoverySources(testimonies=mapOf(testimony.id to testimony))
+  )
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
+ }
  @Test fun evidenceDiscoveredBySomeoneElseCannotRevealEvent(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
-  val evidence=Evidence("e1","trace","Fresh tracks",60,6,"elena")
+  val evidence=Evidence("e1","trace","Fresh tracks",60,6,"elena",relatedEventId=event.id)
   val discovery=Discovery("h1","daniel",DiscoveryChannel.INVESTIGATION,"Daniel infers Erik passed",sourceId=evidence.id)
   val updated=KnowledgeGate().discover(
    listOf(event),discovery,DiscoverySources(evidence=mapOf(evidence.id to evidence))

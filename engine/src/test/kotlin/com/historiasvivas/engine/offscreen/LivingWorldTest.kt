@@ -13,7 +13,7 @@ class LivingWorldTest {
   val hidden=actions.first().hiddenEvent
   assertEquals("erik",hidden.actorId)
   assertTrue(KnowledgeGate().visible(listOf(hidden),"daniel").isEmpty())
-  val evidence=Evidence("evidence-1","offscreen-trace","Physical evidence of Erik's action",70,2,"daniel")
+  val evidence=Evidence("evidence-1","offscreen-trace","Physical evidence of Erik's action",70,2,"daniel",relatedEventId=hidden.id)
   val discovered=KnowledgeGate().discover(
    listOf(hidden),
    Discovery(hidden.id,"daniel",DiscoveryChannel.EVIDENCE,"I found evidence",sourceId=evidence.id),
