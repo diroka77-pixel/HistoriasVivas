@@ -46,6 +46,7 @@ class WorldReducerDiscoveryTest {
   assertEquals(1,evolved.revision)
   assertEquals(60,evolved.salience)
   assertEquals(3,evolved.lastChangedTurn)
+  assertEquals("journey:erik:settlement:ruins:elapsed=1",evolved.hiddenCause)
   assertEquals(1,next.world.discovery.signals.keys.count{it==trace.id})
   assertEquals(listOf(trace.id),DiscoveryEngine().visibleOnJourney(next.world.discovery,"daniel","settlement","ruins").map{it.id})
  }
