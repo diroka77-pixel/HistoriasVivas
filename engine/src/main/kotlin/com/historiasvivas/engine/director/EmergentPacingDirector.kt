@@ -13,3 +13,16 @@ class EmergentPacingDirector {
   return EmergentPacingDecision(EmergentFocus.KEEP_LATENT,"World event exists but does not need immediate focus")
  }
 }
+data class LatentResurfacingDecision(val event:com.historiasvivas.engine.model.StoryEvent?,val reason:String)
+
+class LatentEventDirector(private val minimumAgeTurns:Long=2){
+ fun choose(story:Story,responseMode:ResponseMode,alreadySurfacing:Boolean):LatentResurfacingDecision{
+  if(alreadySurfacing)return LatentResurfacingDecision(null,"Current turn already surfaces an emergent event")
+  if(responseMode==ResponseMode.BREATHE && story.director.tension>=55)return LatentResurfacingDecision(null,"Protect breathing room")
+  val candidate=story.director.latentEmergentEvents.values
+   .filter{story.turn-it.turn>=minimumAgeTurns}
+   .sortedWith(compareBy<com.historiasvivas.engine.model.StoryEvent>{it.turn}.thenBy{it.id})
+   .firstOrNull()
+  return LatentResurfacingDecision(candidate,if(candidate==null)"No mature latent public event" else "Mature latent public event can resurface")
+ }
+}
