@@ -23,7 +23,7 @@ class WorldReducer(
   characters.keys.toList().forEach{id->characters[id]?.let{characters[id]=growthEngine.evolve(it)}}
   return story.copy(
    turn=story.turn+1,
-   memory=(listOf(delta.event)+environmentTick.publicEvents).fold(story.memory){m,e->memoryEngine.remember(m,e)},
+   memory=(listOf(delta.event)+environmentTick.publicEvents+delta.worldEventsToRemember).fold(story.memory){m,e->memoryEngine.remember(m,e)},
    world=story.world.copy(
     characters=characters,
     facts=story.world.facts+delta.factsToAdd,
