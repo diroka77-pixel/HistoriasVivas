@@ -49,4 +49,26 @@ class AutonomousTurnSchedulerTest {
   val (_,cycle)=AutonomousTurnScheduler().run(next,emptySet())
   assertTrue(cycle.plans.isEmpty())
  }
+ @Test fun npcThatAlreadyActedThisTurnDoesNotActTwice(){
+  val s=story()
+  val acted=s.copy(world=s.world.copy(hiddenEvents=listOf(com.historiasvivas.engine.offscreen.HiddenEvent("offscreen-erik",s.turn,"erik","Erik already acted"))))
+  val (_,cycle)=AutonomousTurnScheduler().run(acted,emptySet())
+  assertTrue(cycle.plans.isEmpty())
+ }
+
+ @Test fun npcWithoutInferenceDoesNotStarveLaterEligibleNpc(){
+  val base=story()
+  val idle=Character("aaron","Aaron")
+  val expanded=base.copy(
+   world=base.world.copy(
+    characters=base.world.characters+("aaron" to idle),
+    spatial=base.world.spatial.copy(positions=base.world.spatial.positions+("aaron" to CharacterPosition("aaron","settlement")))
+   ),
+   protagonistId="protagonist"
+  )
+  val (_,cycle)=AutonomousTurnScheduler().run(expanded,emptySet(),maxCharacters=1)
+  assertEquals(1,cycle.plans.size)
+  assertEquals("erik",cycle.plans.single().characterId)
+ }
+
 }
