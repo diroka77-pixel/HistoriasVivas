@@ -4,6 +4,7 @@ import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.narrative.*
 import com.historiasvivas.engine.memory.*
 import com.historiasvivas.engine.character.EmotionalTrace
+import com.historiasvivas.engine.spatial.SpatialEngine
 
 data class NarrativeContext(
  val turn:Long,
@@ -22,11 +23,16 @@ class ContextSelector(
  private val recentLimit:Int=8,
  private val agencySelector:AgencySelector=AgencySelector(),
  private val weightEngine:NarrativeWeightEngine=NarrativeWeightEngine(),
- private val relevanceEngine:MemoryRelevanceEngine=MemoryRelevanceEngine()
+ private val relevanceEngine:MemoryRelevanceEngine=MemoryRelevanceEngine(),
+ private val spatialEngine:SpatialEngine=SpatialEngine()
 ){
  fun select(story:Story,userAction:String):NarrativeContext{
   val terms=userAction.lowercase().split(Regex("\\W+")).filter{it.length>=3}.toSet()
-  val chars=story.world.characters.values.filter{c->terms.any{t->c.name.lowercase().contains(t)||c.id.lowercase()==t}}
+  val protagonistLocation=spatialEngine.locationOf(story.world.spatial,"daniel")
+  val presentIds=protagonistLocation?.let{spatialEngine.presentAt(story.world.spatial,it)}?:emptySet()
+  val chars=story.world.characters.values.filter{c->
+   c.id in presentIds || terms.any{t->c.name.lowercase().contains(t)||c.id.lowercase()==t}
+  }
   val due=story.world.pendingConsequences.filter{!it.resolved&&it.earliestTurn<=story.turn+1}
   val relevant=relevanceEngine.select(story,userAction)
   val relevantIds=relevant.map{it.event.id}.toSet()
