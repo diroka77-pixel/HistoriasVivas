@@ -49,11 +49,14 @@ class AutonomousTurnSchedulerTest {
   assertTrue(updated.world.reasoning.hypotheses.isNotEmpty())
  }
 
- @Test fun recentPlanPreventsImmediateRepeatedAutonomy(){
+ @Test fun recentStartedPlanPreventsImmediateRepeatedAutonomy(){
   val s=story()
-  val (once,_)=AutonomousTurnScheduler().run(s,emptySet())
-  val next=once.copy(turn=once.turn+1)
-  val (_,cycle)=AutonomousTurnScheduler().run(next,emptySet())
+  val plan=AutonomousActionPlan("recent","erik","h",AutonomousActionKind.TRAVEL,70,motivation="Pursue",turn=s.turn-1)
+  val result=AutonomousActionResult("recent",ActionExecutionStatus.STARTED,"Journey started")
+  val recent=s.copy(world=s.world.copy(autonomousAgency=AutonomousAgencyState(
+   plans=mapOf(plan.id to plan),results=mapOf(plan.id to result)
+  )))
+  val (_,cycle)=AutonomousTurnScheduler().run(recent,emptySet())
   assertTrue(cycle.plans.isEmpty())
  }
  @Test fun npcThatAlreadyActedThisTurnDoesNotActTwice(){
