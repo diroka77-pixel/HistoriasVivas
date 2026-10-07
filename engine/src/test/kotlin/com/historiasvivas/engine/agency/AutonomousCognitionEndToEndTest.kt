@@ -89,8 +89,8 @@ class AutonomousCognitionEndToEndTest {
   val erik=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("courage" to 60))))
   val daniel=Character("daniel","Daniel")
   val signals=listOf(
-   WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="A repeating pulse rises from below",createdTurn=1,salience=80),
-   WorldSignal("b","ruins",sense=SignalSense.RADIO,surface="A synchronized pulse answers nearby",createdTurn=2,salience=80)
+   WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="A repeating pulse rises from below",createdTurn=1,salience=95),
+   WorldSignal("b","ruins",sense=SignalSense.RADIO,surface="A synchronized pulse answers nearby",createdTurn=2,salience=95)
   )
   var story=Story("s","Nadir","p",world=WorldState(
    characters=mapOf("erik" to erik,"daniel" to daniel),
