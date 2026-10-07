@@ -5,6 +5,7 @@ import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.validation.ContinuityValidator
 import com.historiasvivas.engine.offscreen.OffscreenSimulator
 import com.historiasvivas.engine.director.*
+import com.historiasvivas.engine.agency.AutonomousTurnScheduler
 
 class TurnEngine(
  private val ai:NarrativeAI,
@@ -13,7 +14,8 @@ class TurnEngine(
  private val validator:ContinuityValidator=ContinuityValidator(),
  private val offscreen:OffscreenSimulator=OffscreenSimulator(),
  private val causalWorld:CausalWorldEngine=CausalWorldEngine(),
- private val pacing:EmergentPacingDirector=EmergentPacingDirector()
+ private val pacing:EmergentPacingDirector=EmergentPacingDirector(),
+ private val autonomousScheduler:AutonomousTurnScheduler=AutonomousTurnScheduler()
 ){
  suspend fun play(story:Story,userAction:String):TurnResult{
   require(story.status==StoryStatus.ACTIVE){"Story is not active"}
@@ -40,11 +42,12 @@ class TurnEngine(
   val validation=validator.validate(story,delta)
   require(validation.accepted){"AI proposed an inconsistent world delta: "+validation.issues.joinToString{it.code}}
   val reduced=reducer.apply(story,delta)
-  val updatedDirector=reduced.director.copy(
-   lastEmergentTurn=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) causal.emergentTurn?:reduced.director.lastEmergentTurn else reduced.director.lastEmergentTurn,
-   latentEmergentEventIds=reduced.director.latentEmergentEventIds+latentIds,
-   latentEmergentEvents=reduced.director.latentEmergentEvents+latentPublic
+  val (autonomousStory,_)=autonomousScheduler.run(reduced,present,maxCharacters=1)
+  val updatedDirector=autonomousStory.director.copy(
+   lastEmergentTurn=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) causal.emergentTurn?:autonomousStory.director.lastEmergentTurn else autonomousStory.director.lastEmergentTurn,
+   latentEmergentEventIds=autonomousStory.director.latentEmergentEventIds+latentIds,
+   latentEmergentEvents=autonomousStory.director.latentEmergentEvents+latentPublic
   )
-  return TurnResult(reduced.copy(director=updatedDirector),response.prose,delta)
+  return TurnResult(autonomousStory.copy(director=updatedDirector),response.prose,delta)
  }
 }
