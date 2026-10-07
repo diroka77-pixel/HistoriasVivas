@@ -8,7 +8,7 @@ import com.historiasvivas.engine.discovery.DiscoveryEngine
 @Serializable enum class AutonomousActionKind { INVESTIGATE, TRAVEL, WARN, PROTECT, HIDE_EVIDENCE, WITHDRAW }
 @Serializable data class AutonomousActionPlan(
  val id:String,val characterId:String,val hypothesisId:String,val kind:AutonomousActionKind,
- val priority:Int,val targetLocationId:String?=null,val targetCharacterId:String?=null,val targetSignalId:String?=null,val motivation:String,val turn:Long
+ val priority:Int,val targetLocationId:String?=null,val targetCharacterId:String?=null,val motivation:String,val turn:Long,val targetSignalId:String?=null
 )
 
 class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),private val discovery:DiscoveryEngine=DiscoveryEngine()) {
