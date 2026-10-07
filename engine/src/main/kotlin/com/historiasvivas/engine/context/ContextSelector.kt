@@ -28,7 +28,7 @@ class ContextSelector(
 ){
  fun select(story:Story,userAction:String):NarrativeContext{
   val terms=userAction.lowercase().split(Regex("\\W+")).filter{it.length>=3}.toSet()
-  val protagonistLocation=spatialEngine.locationOf(story.world.spatial,"daniel")
+  val protagonistLocation=spatialEngine.locationOf(story.world.spatial,story.protagonistId)
   val presentIds=protagonistLocation?.let{spatialEngine.presentAt(story.world.spatial,it)}?:emptySet()
   val chars=story.world.characters.values.filter{c->
    c.id in presentIds || terms.any{t->c.name.lowercase().contains(t)||c.id.lowercase()==t}
