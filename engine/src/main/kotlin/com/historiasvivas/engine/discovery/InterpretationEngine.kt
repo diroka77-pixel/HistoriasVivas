@@ -5,8 +5,10 @@ import kotlinx.serialization.Serializable
 @Serializable data class Evidence(
  val id:String,val signalId:String,val observation:String,val strength:Int=50,val discoveredTurn:Long,val discoveredBy:String
 )
+@Serializable enum class InterpretationRelation { SUPPORTS, CONTRADICTS }
 @Serializable data class Interpretation(
- val id:String,val characterId:String,val signalId:String,val hypothesis:String,val confidence:Int,val evidenceIds:Set<String> = emptySet(),val revisedFrom:String?=null
+ val id:String,val characterId:String,val signalId:String,val hypothesis:String,val confidence:Int,val evidenceIds:Set<String> = emptySet(),val revisedFrom:String?=null,
+ val relation:InterpretationRelation=InterpretationRelation.SUPPORTS,val relatedHypothesisId:String?=null
 )
 
 class InterpretationEngine {
