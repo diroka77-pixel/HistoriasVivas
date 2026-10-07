@@ -19,7 +19,10 @@ class AutonomousTurnScheduler(
  fun run(story:Story,presentCharacterIds:Set<String>,maxCharacters:Int=1):Pair<Story,AutonomousCycle>{
   if(maxCharacters<=0)return story to AutonomousCycle()
   val recentlyPlanned=story.world.autonomousAgency.plans.values
-   .filter{story.turn-it.turn<cooldownTurns}.map{it.characterId}.toSet()
+   .filter{plan->
+    val result=story.world.autonomousAgency.results[plan.id]
+    result?.status!=ActionExecutionStatus.BLOCKED&&story.turn-plan.turn<cooldownTurns
+   }.map{it.characterId}.toSet()
   val alreadyActedThisTurn=story.world.hiddenEvents.asSequence()
    .filter{it.turn==story.turn}.map{it.actorId}.toSet()
   val eligible=story.world.characters.values.asSequence()
