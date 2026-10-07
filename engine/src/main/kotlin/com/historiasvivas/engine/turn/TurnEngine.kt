@@ -25,7 +25,7 @@ class TurnEngine(
    summary=response.eventSummary.ifBlank{userAction.take(240)},
    participants=response.participantIds,tags=response.tags,permanent=response.canonical
   )
-  val present=(response.participantIds+setOf("daniel")).filter{it in story.world.characters}.toSet()
+  val present=(response.participantIds+setOf(story.protagonistId)).filter{it in story.world.characters}.toSet()
   val offscreenHidden=offscreen.plan(story,present,maxActions=2).map{it.hiddenEvent}
   val causal=causalWorld.advance(story,story.director.lastEmergentTurn)
   val pacingDecision=pacing.decide(story,causal,context.narrativeBeat.mode)
