@@ -48,6 +48,7 @@ class DiscoveryEngine {
    salience=(newSalience?:s.salience).coerceIn(0,100),
    hiddenCause=newHiddenCause?:s.hiddenCause,
    ignoredBy=emptySet(),
+   investigatedBy=emptySet(),
    revision=s.revision+1,
    lastChangedTurn=turn
   )
