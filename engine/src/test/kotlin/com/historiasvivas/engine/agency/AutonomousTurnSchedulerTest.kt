@@ -33,7 +33,11 @@ class AutonomousTurnSchedulerTest {
   val result=cycle.results.single()
   assertTrue(result.status==ActionExecutionStatus.STARTED||result.status==ActionExecutionStatus.DEFERRED)
   if(result.status==ActionExecutionStatus.STARTED){
-   assertTrue("erik" in updated.world.spatial.journeys)
+   when(cycle.plans.single().kind){
+    AutonomousActionKind.TRAVEL->assertTrue("erik" in updated.world.spatial.journeys)
+    AutonomousActionKind.INVESTIGATE->assertTrue(updated.world.discovery.evidence.values.any{it.discoveredBy=="erik"})
+    else->fail("Unexpected STARTED autonomous action kind")
+   }
    assertTrue(updated.world.hiddenEvents.any{it.actorId=="erik"})
   } else {
    assertFalse("erik" in updated.world.spatial.journeys)
