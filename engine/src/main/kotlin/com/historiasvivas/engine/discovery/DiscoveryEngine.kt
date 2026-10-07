@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
  }
 }
 
-@Serializable data class DiscoveryState(val signals:Map<String,WorldSignal> = emptyMap())
+@Serializable data class DiscoveryState(val signals:Map<String,WorldSignal> = emptyMap(),val evidence:Map<String,Evidence> = emptyMap(),val interpretations:Map<String,Interpretation> = emptyMap())
 
 class DiscoveryEngine {
  fun visibleAt(state:DiscoveryState,characterId:String,locationId:String?):List<WorldSignal>=
