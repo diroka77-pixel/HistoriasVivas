@@ -41,7 +41,7 @@ class TurnEngine(
   require(validation.accepted){"AI proposed an inconsistent world delta: "+validation.issues.joinToString{it.code}}
   val reduced=reducer.apply(story,delta)
   val updatedDirector=reduced.director.copy(
-   lastEmergentTurn=causal.emergentTurn?:reduced.director.lastEmergentTurn,
+   lastEmergentTurn=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) causal.emergentTurn?:reduced.director.lastEmergentTurn else reduced.director.lastEmergentTurn,
    latentEmergentEventIds=reduced.director.latentEmergentEventIds+latentIds,
    latentEmergentEvents=reduced.director.latentEmergentEvents+latentPublic
   )
