@@ -3,6 +3,7 @@ import com.historiasvivas.engine.character.*
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.reasoning.*
 import com.historiasvivas.engine.spatial.*
+import com.historiasvivas.engine.discovery.*
 import kotlin.test.*
 class AutonomousActionExecutorTest {
  @Test fun npcActsOnPrivateHypothesisButMustTravelThroughWorld(){
@@ -20,4 +21,19 @@ class AutonomousActionExecutorTest {
   assertNull(SpatialEngine().locationOf(oneTurn,"erik"))
   assertEquals(2,oneTurn.journeys["erik"]!!.remainingUnits)
  }
+ @Test fun autonomousInvestigationCreatesKnowledgeOnlyForInvestigatingNpc(){
+  val erik=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("caution" to 30))))
+  val signal=WorldSignal("pulse","ruins",sense=SignalSense.RADIO,surface="A weak repeating pulse",hiddenCause="buried beacon",createdTurn=5,salience=70)
+  val spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins")))
+  val story=Story("s","Nadir","p",world=WorldState(characters=mapOf("erik" to erik),spatial=spatial,discovery=DiscoveryState(signals=mapOf(signal.id to signal))),turn=12)
+  val plan=AutonomousActionPlan("plan","erik","h",AutonomousActionKind.INVESTIGATE,60,motivation="private",turn=12)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  assertEquals(SignalStatus.INVESTIGATED,after.world.discovery.signals.getValue("pulse").statusFor("erik"))
+  assertEquals(SignalStatus.UNNOTICED,after.world.discovery.signals.getValue("pulse").statusFor("daniel"))
+  assertTrue(after.world.discovery.evidence.values.any{it.discoveredBy=="erik"})
+  assertTrue(after.world.discovery.interpretations.values.any{it.characterId=="erik"})
+  assertTrue(after.world.discovery.evidence.values.none{it.discoveredBy=="daniel"})
+ }
+
 }
