@@ -16,7 +16,8 @@ class SpatialEngineTest {
    positions=mapOf("erik" to CharacterPosition("erik","ruins")),
    routes=listOf(Route("ruins","forest",2,blocked=true))
   )
-  val moved=SpatialEngine().move(state,"erik","forest",10)
+  val moved=SpatialEngine().startJourney(state,"erik","forest",10)
   assertEquals("ruins",moved.positions["erik"]?.locationId)
+  assertTrue(moved.journeys.isEmpty())
  }
 }
