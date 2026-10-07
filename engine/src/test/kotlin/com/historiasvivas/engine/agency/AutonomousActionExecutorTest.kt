@@ -114,4 +114,23 @@ class AutonomousActionExecutorTest {
   assertTrue(after.world.socialKnowledge.heardClaims.isEmpty())
  }
 
+ @Test fun hidingEvidenceReducesObservableTraceWithoutErasingPriorKnowledgeOrCause(){
+  val erik=Character("erik","Erik")
+  val signal=WorldSignal("trace","ruins",sense=SignalSense.TRACE,surface="Fresh tracks lead below",hiddenCause="erik opened the sealed hatch",createdTurn=5,salience=90)
+  val evidence=Evidence("e","trace","elena","Fresh tracks lead below",80,6)
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik),
+   spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"))),
+   discovery=DiscoveryState(signals=mapOf("trace" to signal),evidence=mapOf("e" to evidence))
+  ),turn=12)
+  val plan=AutonomousActionPlan("hide","erik","h",AutonomousActionKind.HIDE_EVIDENCE,80,motivation="Conceal",turn=12)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  val hidden=after.world.discovery.signals.getValue("trace")
+  assertTrue(hidden.salience<signal.salience)
+  assertFalse(hidden.persistent)
+  assertEquals(signal.hiddenCause,hidden.hiddenCause)
+  assertEquals(evidence,after.world.discovery.evidence.getValue("e"))
+ }
+
 }
