@@ -2,6 +2,7 @@ package com.historiasvivas.engine.agency
 import com.historiasvivas.engine.model.Story
 import com.historiasvivas.engine.reasoning.AutonomousReasoningEngine
 import com.historiasvivas.engine.spatial.SpatialEngine
+import com.historiasvivas.engine.offscreen.HiddenEvent
 
 data class AutonomousCycle(
  val plans:List<AutonomousActionPlan> = emptyList(),
@@ -31,6 +32,7 @@ class AutonomousTurnScheduler(
    val inference=reasoning.infer(current,character.id,current.turn).firstOrNull()?:return@forEach
    val plan=planner.plan(current,character.id,inference.hypothesis)?:return@forEach
    val (after,result)=executor.execute(current,plan)
+   val actionHistory=result.event?.let{event-> HiddenEvent("hidden-"+event.id,event.turn,plan.characterId,event.summary) }
    val agency=after.world.autonomousAgency.copy(
     plans=after.world.autonomousAgency.plans+(plan.id to plan),
     results=after.world.autonomousAgency.results+(plan.id to result)
@@ -38,7 +40,7 @@ class AutonomousTurnScheduler(
    val reasoningState=after.world.reasoning.copy(
     hypotheses=after.world.reasoning.hypotheses+(inference.hypothesis.id to inference.hypothesis)
    )
-   current=after.copy(world=after.world.copy(autonomousAgency=agency,reasoning=reasoningState))
+   current=after.copy(world=after.world.copy(autonomousAgency=agency,reasoning=reasoningState,hiddenEvents=(after.world.hiddenEvents+listOfNotNull(actionHistory)).distinctBy{it.id}))
    plans+=plan; results+=result
   }
   return current to AutonomousCycle(plans,results)
