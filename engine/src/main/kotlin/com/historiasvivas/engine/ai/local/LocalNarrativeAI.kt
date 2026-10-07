@@ -19,14 +19,13 @@ interface LocalInferenceRuntime {
  suspend fun generate(packet:NarrativePacket,userAction:String,config:LocalGenerationConfig):NarrativeResponse
 }
 class LocalNarrativeAI(
- private val protagonistId:String,
  private val runtime:LocalInferenceRuntime,
  private val packetBuilder:NarrativePacketBuilder=NarrativePacketBuilder(),
  private val config:LocalGenerationConfig=LocalGenerationConfig()
 ):NarrativeAI{
  override suspend fun continueStory(request:NarrativeRequest):NarrativeResponse{
-  val packet=packetBuilder.build(request.story,protagonistId,request.context.narrativeBeat)
-   .copy(player=packetBuilder.build(request.story,protagonistId,request.context.narrativeBeat).player.copy(
+  val base=packetBuilder.build(request.story,request.story.protagonistId,request.context.narrativeBeat)
+  val packet=base.copy(player=base.player.copy(
     recentVisibleEvents=(request.context.relevantMemories.map{it.event}+request.context.recentEvents).distinctBy{it.id}.takeLast(12)
    ))
   return runtime.generate(packet,request.userAction,config)
