@@ -42,7 +42,7 @@ class TurnEngine(
   val surfaced=currentSurfaced+resurfaced
   val consumedLatentIds=resurfaced.map{it.id}.toSet()
   val latentPublic=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptyMap() else causal.publicEvents.associateBy{it.id}
-  val latentIds=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptySet() else (causal.publicEvents.map{it.id}+causal.hiddenEvents.map{it.id}).toSet()
+  val latentIds=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptySet() else causal.publicEvents.map{it.id}.toSet()
   val hidden=offscreenHidden+causal.hiddenEvents
   val delta=WorldDelta(
    event,response.proposedFacts,response.proposedConsequences+causal.consequences,response.resolvedConsequenceIds,
