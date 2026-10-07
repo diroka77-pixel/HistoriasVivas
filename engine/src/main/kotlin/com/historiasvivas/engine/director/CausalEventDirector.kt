@@ -5,7 +5,7 @@ enum class EmergentEventKind { RESOURCE_CRISIS, EXPEDITION_DANGER, SOCIAL_FRACTU
 data class CausalFactor(val id:String,val weight:Int,val description:String)
 data class EmergentEventProposal(val id:String,val kind:EmergentEventKind,val score:Int,val factors:List<CausalFactor>,val summary:String,val hidden:Boolean=true)
 
-class CausalEventDirector(private val threshold:Int=65,private val cooldownTurns:Long=3){
+class CausalEventDirector(\n private val threshold:Int=65,\n private val cooldownTurns:Long=3,\n private val repetitionWindowTurns:Long=12\n){
  fun propose(story:Story,lastEmergentTurn:Long?=null):EmergentEventProposal?{
   if(lastEmergentTurn!=null && story.turn-lastEmergentTurn<cooldownTurns)return null
   val candidates=mutableListOf<EmergentEventProposal>()
