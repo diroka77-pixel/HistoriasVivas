@@ -78,4 +78,16 @@ class AutonomousTurnSchedulerTest {
   assertEquals("erik",cycle.plans.single().characterId)
  }
 
+ @Test fun blockedAttemptDoesNotApplyFullAgencyCooldown(){
+  val s=story()
+  val blockedPlan=AutonomousActionPlan("blocked","erik","h",AutonomousActionKind.INVESTIGATE,50,motivation="Try",turn=11)
+  val blockedResult=AutonomousActionResult("blocked",ActionExecutionStatus.BLOCKED,"Clue vanished")
+  val withBlocked=s.copy(world=s.world.copy(autonomousAgency=AutonomousAgencyState(
+   plans=mapOf("blocked" to blockedPlan),results=mapOf("blocked" to blockedResult)
+  )))
+  val (_,cycle)=AutonomousTurnScheduler().run(withBlocked,emptySet())
+  assertEquals(1,cycle.plans.size)
+  assertEquals("erik",cycle.plans.single().characterId)
+ }
+
 }
