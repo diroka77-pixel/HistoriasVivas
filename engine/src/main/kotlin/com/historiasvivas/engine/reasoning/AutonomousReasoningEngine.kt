@@ -45,7 +45,11 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
     else->context
    }
    val existing=story.world.reasoning.hypotheses.values
-    .filter{it.characterId==characterId&&it.claim==claim&&it.subject==subject}
+    .filter{it.characterId==characterId&&it.claim==claim}
+    .filter{candidate->
+     candidate.subject==subject ||
+      (context=="legacy" && candidate.supportingEvidenceIds.isNotEmpty() && candidate.supportingEvidenceIds.all{it in clues.map{e->e.id}.toSet()})
+    }
     .maxByOrNull{it.revisedTurn}
    val hypothesis=if(existing==null){
     hypotheses.formulate(characterId,subject,claim,clues,character.mind.beliefs,turn)
