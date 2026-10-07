@@ -43,9 +43,15 @@ class AutonomousCognitionEndToEndTest {
   assertEquals("erik",inference.hypothesis.characterId)
   assertEquals(2,inference.hypothesis.supportingEvidenceIds.size)
   val plan=HypothesisAgencyEngine().plan(story,"erik",inference.hypothesis)!!
+  val (acted,result)=AutonomousActionExecutor().execute(story,plan)
   assertEquals("erik",plan.characterId)
   assertEquals(inference.hypothesis.id,plan.hypothesisId)
   assertTrue(plan.motivation.contains(inference.hypothesis.claim))
+  assertTrue(result.status in setOf(ActionExecutionStatus.STARTED,ActionExecutionStatus.BLOCKED,ActionExecutionStatus.DEFERRED))
+  if(result.status==ActionExecutionStatus.STARTED&&plan.kind==AutonomousActionKind.INVESTIGATE){
+   assertTrue(acted.world.discovery.evidence.values.count{it.discoveredBy=="erik"}>=2)
+  }
+  assertTrue(acted.world.discovery.evidence.values.none{it.discoveredBy=="daniel"})
   assertTrue(story.world.reasoning.hypotheses.values.none{it.characterId=="daniel"})
   assertTrue(story.world.discovery.interpretations.values.none{it.characterId=="daniel"})
  }
