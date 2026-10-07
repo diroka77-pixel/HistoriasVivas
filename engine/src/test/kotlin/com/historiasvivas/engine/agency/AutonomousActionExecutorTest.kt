@@ -160,4 +160,20 @@ class AutonomousActionExecutorTest {
   assertEquals(ActionExecutionStatus.DEFERRED,result.status)
  }
 
+ @Test fun concealmentChangesOnlyExplicitHypothesisSignalNotMoreSalientUnrelatedClue(){
+  val erik=Character("erik","Erik")
+  val target=WorldSignal("target","ruins",sense=SignalSense.TRACE,surface="Machine marks",createdTurn=1,salience=50)
+  val unrelated=WorldSignal("unrelated","ruins",sense=SignalSense.SIGHT,surface="Bright flare",createdTurn=1,salience=100)
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik),
+   spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"))),
+   discovery=DiscoveryState(signals=mapOf(target.id to target,unrelated.id to unrelated))
+  ),turn=4)
+  val plan=AutonomousActionPlan("hide-target","erik","h",AutonomousActionKind.HIDE_EVIDENCE,80,motivation="Conceal",turn=4,targetSignalId="target")
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  assertTrue(after.world.discovery.signals.getValue("target").salience<target.salience)
+  assertEquals(unrelated,after.world.discovery.signals.getValue("unrelated"))
+ }
+
 }
