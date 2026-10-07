@@ -8,7 +8,7 @@ class CausalDiscoveryGenerator {
   story.world.spatial.journeys.values.forEach{j->signals+=fromJourney(story,j)}
   story.world.environment.pressures.values.filter{it.intensity>=45}.forEach{p->
    signals+=WorldSignal(
-    id="pressure-"+p.id+"-"+story.turn,locationId=null,sense=SignalSense.ENVIRONMENT,
+    id="pressure-"+p.id,locationId=null,sense=SignalSense.ENVIRONMENT,
     surface=surfaceForPressure(p.id,p.description),hiddenCause="pressure:"+p.id+":"+p.intensity,
     createdTurn=story.turn,salience=p.intensity.coerceIn(45,95),persistent=true
    )
