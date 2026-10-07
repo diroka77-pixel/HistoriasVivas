@@ -29,8 +29,10 @@ class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),p
   val presentListeners=currentLocation?.let{spatial.presentAt(story.world.spatial,it)}.orEmpty()-characterId
   val warnTarget=valued?.first?.toCharacterId?.takeIf{it in presentListeners}
    ?:presentListeners.filter{story.world.characters[it]?.alive==true}.sorted().firstOrNull()
+  val hypothesisSignalIds=hypothesis.supportingEvidenceIds.mapNotNull{story.world.discovery.evidence[it]?.signalId}.toSet()
+  val relatedVisibleSignal=discovery.visibleAt(story.world.discovery,characterId,currentLocation).firstOrNull{it.id in hypothesisSignalIds}
   val kind=when{
-   secrecy>=65&&hypothesis.confidence>=65->AutonomousActionKind.HIDE_EVIDENCE
+   secrecy>=65&&hypothesis.confidence>=65&&relatedVisibleSignal!=null->AutonomousActionKind.HIDE_EVIDENCE
    compassion>=75&&hypothesis.confidence>=65&&protectTarget!=null->AutonomousActionKind.PROTECT
    compassion>=65&&hypothesis.confidence>=60&&warnTarget!=null->AutonomousActionKind.WARN
    caution>=70&&courage<30->AutonomousActionKind.WITHDRAW
@@ -42,9 +44,8 @@ class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),p
    AutonomousActionKind.WARN->warnTarget
    else->null
   }
-  val hypothesisSignalIds=hypothesis.supportingEvidenceIds.mapNotNull{story.world.discovery.evidence[it]?.signalId}.toSet()
   val targetSignal=if(kind==AutonomousActionKind.INVESTIGATE||kind==AutonomousActionKind.HIDE_EVIDENCE)
-   discovery.visibleAt(story.world.discovery,characterId,currentLocation).firstOrNull{it.id in hypothesisSignalIds}?.id
+   relatedVisibleSignal?.id
   else null
   return AutonomousActionPlan(
    "auto-"+characterId+"-"+hypothesis.id+"-"+story.turn,characterId,hypothesis.id,kind,base,
