@@ -27,7 +27,6 @@ class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),p
    targetLocation!=null&&targetLocation!=currentLocation&&hypothesis.confidence>=55->AutonomousActionKind.TRAVEL
    else->AutonomousActionKind.INVESTIGATE
   }
-  if(kind==AutonomousActionKind.INVESTIGATE&&discovery.visibleAt(story.world.discovery,characterId,currentLocation).isEmpty())return null
   return AutonomousActionPlan(
    "auto-"+characterId+"-"+hypothesis.id+"-"+story.turn,characterId,hypothesis.id,kind,base,
    targetLocationId=targetLocation,motivation="Acts on private hypothesis: "+hypothesis.claim,turn=story.turn
