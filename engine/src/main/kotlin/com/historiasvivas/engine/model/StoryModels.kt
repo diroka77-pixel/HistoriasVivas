@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import com.historiasvivas.engine.character.CharacterMind
 import com.historiasvivas.engine.offscreen.HiddenEvent
 import com.historiasvivas.engine.world.EnvironmentState
+import com.historiasvivas.engine.director.DirectorState
 
 @Serializable enum class StoryStatus { ACTIVE, ENDING, FINISHED }
 @Serializable enum class FactVisibility { PUBLIC, LIMITED, HIDDEN }
@@ -19,7 +20,8 @@ import com.historiasvivas.engine.world.EnvironmentState
 @Serializable data class Story(
  val id:String,val title:String,val premise:String,
  val world:WorldState=WorldState(),val memory:StoryMemory=StoryMemory(),
- val status:StoryStatus=StoryStatus.ACTIVE,val turn:Long=0
+ val status:StoryStatus=StoryStatus.ACTIVE,val turn:Long=0,
+ val director:DirectorState=DirectorState()
 )
 @Serializable data class WorldState(
  val characters:Map<String,Character> = emptyMap(),
