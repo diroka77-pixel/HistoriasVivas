@@ -104,6 +104,7 @@ class AutonomousCognitionEndToEndTest {
   }
   val inference=AutonomousReasoningEngine().infer(story,"erik").single()
   assertEquals("ruins",inference.hypothesis.subject)
+  assertTrue(inference.hypothesis.confidence>=55)
   story=story.copy(world=story.world.copy(spatial=story.world.spatial.copy(
    positions=story.world.spatial.positions+("erik" to CharacterPosition("erik","settlement",5))
   )),turn=6)
