@@ -104,7 +104,6 @@ class AutonomousActionExecutor(
     val concealed=signal.copy(
      surface="The remaining traces here are difficult to interpret.",
      salience=(signal.salience-60).coerceAtLeast(0),
-     persistent=false,
      revision=signal.revision+1,
      lastChangedTurn=story.turn
     )
