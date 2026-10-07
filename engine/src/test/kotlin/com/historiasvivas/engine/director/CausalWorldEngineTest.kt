@@ -44,6 +44,12 @@ class CausalWorldEngineTest {
   assertTrue("discovery" in event.tags)
   assertFalse(event.summary.contains("secret beacon"))
   assertFalse(event.summary.contains("covert team"))
+  assertEquals(1,result.consequences.size)
+  val consequence=result.consequences.single()
+  assertTrue(consequence.description.contains("a"))
+  assertTrue(consequence.description.contains("b"))
+  assertFalse(consequence.description.contains("secret beacon"))
+  assertFalse(consequence.description.contains("covert team"))
  }
  @Test fun expeditionDangerMaterializesAsPendingRiskNotAutomaticDamage(){
   val env=EnvironmentState(pressures=mapOf("weather" to WorldPressure("weather",80,1,"Severe storm")))
