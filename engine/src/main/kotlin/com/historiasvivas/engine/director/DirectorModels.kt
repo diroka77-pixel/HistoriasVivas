@@ -13,7 +13,9 @@ import kotlinx.serialization.Serializable
 @Serializable data class DirectorState(
  val tension:Int=25,
  val threads:List<NarrativeThread> = emptyList(),
- val quietTurns:Int=0
+ val quietTurns:Int=0,
+ val lastEmergentTurn:Long?=null,
+ val latentEmergentEventIds:Set<String> = emptySet()
 )
 data class DirectorIntent(
  val targetTension:Int,
