@@ -25,6 +25,7 @@ class WorldReducer(
     characters=characters,
     facts=story.world.facts+delta.factsToAdd,
     pendingConsequences=consequences,
+    hiddenEvents=(story.world.hiddenEvents+delta.hiddenEventsToAdd).distinctBy{it.id},
     worldClock=story.world.worldClock+1
    )
   )
