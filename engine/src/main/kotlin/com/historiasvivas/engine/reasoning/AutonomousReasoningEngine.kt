@@ -40,6 +40,7 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
   return interpretedGroups.take(2).mapNotNull{(claim,context,clues)->
    val subject=when{
     context.startsWith("location:")->context.removePrefix("location:")
+    context.startsWith("signal:")->clues.map{it.signalId}.distinct().sorted().joinToString("+")
     else->context
    }
    val existing=story.world.reasoning.hypotheses.values
