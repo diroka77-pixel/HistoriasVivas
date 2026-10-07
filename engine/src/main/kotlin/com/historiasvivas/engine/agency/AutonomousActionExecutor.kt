@@ -111,8 +111,23 @@ class AutonomousActionExecutor(
     story.copy(world=story.world.copy(discovery=state)) to
      AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Observable trace concealed",event)
    }
-   AutonomousActionKind.PROTECT->
-    story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Requires scene/world-specific resolution")
+   AutonomousActionKind.PROTECT->{
+    val targetId=plan.targetCharacterId
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No character to protect")
+    val target=story.world.characters[targetId]
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Protected character unavailable")
+    if(!target.alive)return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Protected character unavailable")
+    val from=spatial.locationOf(story.world.spatial,plan.characterId)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Protector is not at a stable location")
+    val targetLocation=spatial.locationOf(story.world.spatial,targetId)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Protected character is travelling")
+    if(from==targetLocation)return story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Protector is already with protected character")
+    val after=spatial.startJourney(story.world.spatial,plan.characterId,targetLocation,story.turn)
+    if(after==story.world.spatial)return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Protected character is not reachable")
+    val event=StoryEvent(plan.id+"-protective-travel",story.turn,c.name+" moves to protect "+target.name,setOf(c.id,targetId),setOf("autonomous","protect","travel"))
+    story.copy(world=story.world.copy(spatial=after)) to
+     AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Protective journey started",event)
+   }
   }
  }
 }
