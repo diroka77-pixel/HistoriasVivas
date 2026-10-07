@@ -55,4 +55,23 @@ class TurnEngineTest {
   assertTrue(result.story.world.autonomousAgency.plans.values.any{it.characterId=="erik"})
  }
 
+ @Test fun latentEmergentEventStillStartsDirectorCooldown()= runBlocking {
+  val ai=object:NarrativeAI{
+   override suspend fun continueStory(request:NarrativeRequest)=NarrativeResponse(
+    prose="Daniel descansa un momento.",eventSummary="Daniel toma aire."
+   )
+  }
+  val signals=mapOf(
+   "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Repeating pulse",createdTurn=1,salience=80),
+   "b" to WorldSignal("b","ruins",sense=SignalSense.TRACE,surface="Fresh marks",createdTurn=2,salience=75)
+  )
+  val start=Story("s3","Nadir","p",world=WorldState(
+   characters=mapOf("daniel" to Character("daniel","Daniel")),
+   discovery=DiscoveryState(signals=signals)
+  ),turn=5,protagonistId="daniel",director=DirectorState(tension=60))
+  val result=TurnEngine(ai).play(start,"Me siento y descanso.")
+  assertNotNull(result.story.director.lastEmergentTurn)
+  assertTrue(result.story.director.latentEmergentEventIds.isNotEmpty())
+ }
+
 }
