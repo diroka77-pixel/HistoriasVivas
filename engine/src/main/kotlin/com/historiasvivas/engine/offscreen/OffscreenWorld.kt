@@ -34,6 +34,9 @@ class KnowledgeGate {
  }
  private fun isGrounded(discovery:Discovery):Boolean{
   if(discovery.interpretation.isBlank())return false
-  return discovery.channel==DiscoveryChannel.WITNESSED || !discovery.sourceId.isNullOrBlank()
+  return when(discovery.channel){
+   DiscoveryChannel.TOLD,DiscoveryChannel.RUMOR->!discovery.sourceId.isNullOrBlank()
+   DiscoveryChannel.WITNESSED,DiscoveryChannel.EVIDENCE,DiscoveryChannel.INVESTIGATION->true
+  }
  }
 }
