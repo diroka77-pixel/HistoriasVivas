@@ -54,4 +54,39 @@ class AutonomousReasoningRevisionTest {
   assertEquals(HypothesisStatus.WEAKENED,revised.status)
  }
 
+ @Test fun sameClaimAtSameLocationCombinesIntoLocationGroundedHypothesis(){
+  val e1=Evidence("e1","a","Pulse A",70,1,"erik"); val e2=Evidence("e2","b","Pulse B",70,2,"erik")
+  val claim="The signal may have an intentional source"
+  val state=DiscoveryState(
+   signals=mapOf(
+    "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Pulse A",createdTurn=1),
+    "b" to WorldSignal("b","ruins",sense=SignalSense.RADIO,surface="Pulse B",createdTurn=2)
+   ),
+   evidence=mapOf("e1" to e1,"e2" to e2),
+   interpretations=mapOf(
+    "i1" to Interpretation("i1","erik","a",claim,60,setOf("e1")),
+    "i2" to Interpretation("i2","erik","b",claim,60,setOf("e2"))
+   )
+  )
+  val story=Story("s","Nadir","p",world=WorldState(characters=mapOf("erik" to Character("erik","Erik")),discovery=state),turn=3)
+  assertEquals("ruins",AutonomousReasoningEngine().infer(story,"erik").single().hypothesis.subject)
+ }
+ @Test fun sameGenericClaimAtDifferentLocationsDoesNotCreateFalseCombinedHypothesis(){
+  val e1=Evidence("e1","a","Pulse A",70,1,"erik"); val e2=Evidence("e2","b","Pulse B",70,2,"erik")
+  val claim="The signal may have an intentional source"
+  val state=DiscoveryState(
+   signals=mapOf(
+    "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Pulse A",createdTurn=1),
+    "b" to WorldSignal("b","forest",sense=SignalSense.RADIO,surface="Pulse B",createdTurn=2)
+   ),
+   evidence=mapOf("e1" to e1,"e2" to e2),
+   interpretations=mapOf(
+    "i1" to Interpretation("i1","erik","a",claim,60,setOf("e1")),
+    "i2" to Interpretation("i2","erik","b",claim,60,setOf("e2"))
+   )
+  )
+  val story=Story("s","Nadir","p",world=WorldState(characters=mapOf("erik" to Character("erik","Erik")),discovery=state),turn=3)
+  assertTrue(AutonomousReasoningEngine().infer(story,"erik").isEmpty())
+ }
+
 }
