@@ -85,4 +85,36 @@ class AutonomousCognitionEndToEndTest {
   assertNull(SpatialEngine().locationOf(after.world.spatial,"erik"))
  }
 
+ @Test fun observedRuinsEvidenceNaturallyBecomesLaterTravelWithoutLeakingToProtagonist(){
+  val erik=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("courage" to 60))))
+  val daniel=Character("daniel","Daniel")
+  val signals=listOf(
+   WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="A repeating pulse rises from below",createdTurn=1,salience=80),
+   WorldSignal("b","ruins",sense=SignalSense.RADIO,surface="A synchronized pulse answers nearby",createdTurn=2,salience=80)
+  )
+  var story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to erik,"daniel" to daniel),
+   locations=mapOf("ruins" to Location("ruins","Ruins"),"settlement" to Location("settlement","Settlement")),
+   spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"),"daniel" to CharacterPosition("daniel","settlement")),routes=listOf(Route("settlement","ruins",3))),
+   discovery=DiscoveryState(signals=signals.associateBy{it.id})
+  ),turn=4,protagonistId="daniel")
+  for(signal in signals){
+   val out=InvestigationEngine().investigate(story.world.discovery,signal.id,"erik",erik.mind,story.turn)!!
+   story=story.copy(world=story.world.copy(discovery=out.state))
+  }
+  val inference=AutonomousReasoningEngine().infer(story,"erik").single()
+  assertEquals("ruins",inference.hypothesis.subject)
+  story=story.copy(world=story.world.copy(spatial=story.world.spatial.copy(
+   positions=story.world.spatial.positions+("erik" to CharacterPosition("erik","settlement",5))
+  )),turn=6)
+  val plan=HypothesisAgencyEngine().plan(story,"erik",inference.hypothesis)!!
+  assertEquals(AutonomousActionKind.TRAVEL,plan.kind)
+  assertEquals("ruins",plan.targetLocationId)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  assertEquals("ruins",after.world.spatial.journeys.getValue("erik").to)
+  assertTrue(after.world.discovery.evidence.values.none{it.discoveredBy=="daniel"})
+  assertTrue(after.world.discovery.interpretations.values.none{it.characterId=="daniel"})
+ }
+
 }
