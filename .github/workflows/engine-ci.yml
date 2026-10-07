@@ -9,6 +9,10 @@ on:
       - 'settings.gradle.kts'
       - '.github/workflows/engine-ci.yml'
   pull_request:
+    paths:
+      - 'engine/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
   workflow_dispatch:
 
 jobs:
