@@ -3,6 +3,7 @@ import kotlinx.serialization.Serializable
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.reasoning.*
 import com.historiasvivas.engine.spatial.SpatialEngine
+import com.historiasvivas.engine.discovery.DiscoveryEngine
 
 @Serializable enum class AutonomousActionKind { INVESTIGATE, TRAVEL, WARN, PROTECT, HIDE_EVIDENCE, WITHDRAW }
 @Serializable data class AutonomousActionPlan(
@@ -10,7 +11,7 @@ import com.historiasvivas.engine.spatial.SpatialEngine
  val priority:Int,val targetLocationId:String?=null,val targetCharacterId:String?=null,val motivation:String,val turn:Long
 )
 
-class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine()) {
+class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine(),private val discovery:DiscoveryEngine=DiscoveryEngine()) {
  fun plan(story:Story,characterId:String,hypothesis:Hypothesis):AutonomousActionPlan?{
   val c=story.world.characters[characterId]?:return null
   if(!c.alive||hypothesis.characterId!=characterId||hypothesis.status==HypothesisStatus.REJECTED)return null
@@ -26,6 +27,7 @@ class HypothesisAgencyEngine(private val spatial:SpatialEngine=SpatialEngine()) 
    targetLocation!=null&&targetLocation!=currentLocation&&hypothesis.confidence>=55->AutonomousActionKind.TRAVEL
    else->AutonomousActionKind.INVESTIGATE
   }
+  if(kind==AutonomousActionKind.INVESTIGATE&&discovery.visibleAt(story.world.discovery,characterId,currentLocation).isEmpty())return null
   return AutonomousActionPlan(
    "auto-"+characterId+"-"+hypothesis.id+"-"+story.turn,characterId,hypothesis.id,kind,base,
    targetLocationId=targetLocation,motivation="Acts on private hypothesis: "+hypothesis.claim,turn=story.turn
