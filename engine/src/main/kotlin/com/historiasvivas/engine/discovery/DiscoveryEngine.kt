@@ -7,7 +7,8 @@ import kotlinx.serialization.Serializable
  val id:String,val locationId:String?,val routeFrom:String?=null,val routeTo:String?=null,
  val sense:SignalSense,val surface:String,val hiddenCause:String?=null,
  val createdTurn:Long,val salience:Int=50,val persistent:Boolean=true,
- val noticedBy:Set<String> = emptySet(),val investigatedBy:Set<String> = emptySet(),val ignoredBy:Set<String> = emptySet()
+ val noticedBy:Set<String> = emptySet(),val investigatedBy:Set<String> = emptySet(),val ignoredBy:Set<String> = emptySet(),
+ val revision:Int=0,val lastChangedTurn:Long=createdTurn
 ){
  fun statusFor(characterId:String)=when{
   characterId in investigatedBy->SignalStatus.INVESTIGATED
@@ -38,5 +39,17 @@ class DiscoveryEngine {
  fun ignore(state:DiscoveryState,signalId:String,characterId:String):DiscoveryState{
   val s=state.signals[signalId]?:return state
   return state.copy(signals=state.signals+(signalId to s.copy(noticedBy=s.noticedBy+characterId,ignoredBy=s.ignoredBy+characterId)))
+ }
+ fun reactivate(state:DiscoveryState,signalId:String,turn:Long,newSurface:String?=null,newSalience:Int?=null):DiscoveryState{
+  val s=state.signals[signalId]?:return state
+  if(!s.persistent || turn<=s.lastChangedTurn)return state
+  val updated=s.copy(
+   surface=newSurface?:s.surface,
+   salience=(newSalience?:s.salience).coerceIn(0,100),
+   ignoredBy=emptySet(),
+   revision=s.revision+1,
+   lastChangedTurn=turn
+  )
+  return state.copy(signals=state.signals+(signalId to updated))
  }
 }
