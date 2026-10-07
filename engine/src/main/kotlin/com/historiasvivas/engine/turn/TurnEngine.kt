@@ -30,6 +30,7 @@ class TurnEngine(
   val causal=causalWorld.advance(story,story.director.lastEmergentTurn)
   val pacingDecision=pacing.decide(story,causal,context.narrativeBeat.mode)
   val surfaced=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW)causal.publicEvents else emptyList()
+  val latentPublic=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptyMap() else causal.publicEvents.associateBy{it.id}
   val latentIds=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) emptySet() else (causal.publicEvents.map{it.id}+causal.hiddenEvents.map{it.id}).toSet()
   val hidden=offscreenHidden+causal.hiddenEvents
   val delta=WorldDelta(
@@ -41,7 +42,8 @@ class TurnEngine(
   val reduced=reducer.apply(story,delta)
   val updatedDirector=reduced.director.copy(
    lastEmergentTurn=causal.emergentTurn?:reduced.director.lastEmergentTurn,
-   latentEmergentEventIds=reduced.director.latentEmergentEventIds+latentIds
+   latentEmergentEventIds=reduced.director.latentEmergentEventIds+latentIds,
+   latentEmergentEvents=reduced.director.latentEmergentEvents+latentPublic
   )
   return TurnResult(reduced.copy(director=updatedDirector),response.prose,delta)
  }
