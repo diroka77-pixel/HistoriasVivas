@@ -22,11 +22,11 @@ import kotlinx.serialization.Serializable
 
 class DiscoveryEngine {
  fun visibleAt(state:DiscoveryState,characterId:String,locationId:String?): List<WorldSignal> =
-  state.signals.values.filter{it.locationId==locationId&&it.statusFor(characterId) !in setOf(SignalStatus.INVESTIGATED,SignalStatus.IGNORED)}.sortedByDescending{it.salience}
+  state.signals.values.filter{it.locationId==locationId&&it.salience>0&&it.statusFor(characterId) !in setOf(SignalStatus.INVESTIGATED,SignalStatus.IGNORED)}.sortedByDescending{it.salience}
  fun visibleOnJourney(state:DiscoveryState,characterId:String,from:String,to:String): List<WorldSignal> =
   state.signals.values.filter{s->
    val onRoute=(s.routeFrom==from&&s.routeTo==to)||(s.routeFrom==to&&s.routeTo==from)
-   onRoute&&s.statusFor(characterId) !in setOf(SignalStatus.INVESTIGATED,SignalStatus.IGNORED)
+   onRoute&&s.salience>0&&s.statusFor(characterId) !in setOf(SignalStatus.INVESTIGATED,SignalStatus.IGNORED)
   }.sortedByDescending{it.salience}
  fun notice(state:DiscoveryState,signalId:String,characterId:String):DiscoveryState{
   val s=state.signals[signalId]?:return state
