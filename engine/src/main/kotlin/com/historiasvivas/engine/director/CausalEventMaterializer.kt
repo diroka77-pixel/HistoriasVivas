@@ -32,7 +32,7 @@ class CausalEventMaterializer {
    EmergentEventKind.DISCOVERY_OPPORTUNITY->{
     val signals=story.world.discovery.signals.values.filter{it.persistent&&it.salience>=65}
     if(signals.size<2)null else {
-     val participants=signals.flatMap{it.noticedBy}.toSet()
+     val participants=signals.flatMap{it.noticedBy}.filter{story.world.characters[it]?.alive==true}.toSet()
      val event=StoryEvent(proposal.id,story.turn+1,proposal.summary,participants=participants,tags=setOf("emergent","discovery"))
      val consequence=Consequence(
       proposal.id+"-unresolved-signals",event.id,
