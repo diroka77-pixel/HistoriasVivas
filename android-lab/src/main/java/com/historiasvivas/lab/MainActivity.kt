@@ -10,6 +10,7 @@ import com.arm.aichat.InferenceEngine
 import com.historiasvivas.engine.ai.local.LocalNarrativeAI
 import com.historiasvivas.engine.scenario.RuinsScenario
 import com.historiasvivas.engine.session.StorySession
+import com.historiasvivas.engine.manuscript.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,6 +21,8 @@ class MainActivity:AppCompatActivity(){
  private lateinit var status:TextView; private lateinit var storyText:TextView; private lateinit var metrics:TextView
  private lateinit var action:EditText; private lateinit var send:Button; private lateinit var engine:InferenceEngine
  private var session:StorySession?=null
+ private var manuscript:StoryManuscript?=null
+ private val manuscriptPersistence=ManuscriptPersistence()
  private val selectModel=registerForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)lifecycleScope.launch{prepareModel(uri)}}
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContentView(R.layout.activity_main)
   status=findViewById(R.id.modelStatus);storyText=findViewById(R.id.storyText);metrics=findViewById(R.id.metrics);action=findViewById(R.id.actionText);send=findViewById(R.id.sendAction)
@@ -34,12 +37,21 @@ class MainActivity:AppCompatActivity(){
   val ai=LocalNarrativeAI("daniel",LlamaCppNarrativeRuntime(engine))
   val saveFile=File(filesDir,"nadir-story.json")
   session=if(saveFile.exists()) StorySession.resume(saveFile.readText(),ai) else StorySession(RuinsScenario.create(),ai)
+  val manuscriptFile=File(filesDir,"nadir-manuscript.json")
+  manuscript=if(manuscriptFile.exists()) manuscriptPersistence.deserialize(manuscriptFile.readText()) else StoryManuscript(session!!.story.id,session!!.story.title)
   withContext(Dispatchers.Main){status.text="Narrador local preparado · sin conexión";metrics.text="Carga: "+(System.currentTimeMillis()-started)+" ms";storyText.text=if((session?.story?.turn?:0L)>0) "Nadir reanudado · turno "+session!!.story.turn+". ¿Qué hace o dice Daniel?" else "Nadir despierta bajo un cielo desconocido. ¿Qué hace o dice Daniel?";send.isEnabled=true}
  }
  private fun playTurn(){val current=session?:return;val userAction=action.text.toString().trim();if(userAction.isEmpty())return
   action.text.clear();send.isEnabled=false;val started=System.currentTimeMillis()
   lifecycleScope.launch(Dispatchers.Default){
-   try{val turn=current.act(userAction);File(filesDir,"nadir-story.json").writeText(current.save());withContext(Dispatchers.Main){storyText.text=turn.prose;metrics.text="Turno "+turn.story.turn+" · guardado · "+(System.currentTimeMillis()-started)+" ms"}}
+   try{
+    val turn=current.act(userAction)
+    File(filesDir,"nadir-story.json").writeText(current.save())
+    manuscript=manuscript!!.append(ManuscriptEntry(turn.story.turn,userAction,turn.prose,System.currentTimeMillis()))
+    File(filesDir,"nadir-manuscript.json").writeText(manuscriptPersistence.serialize(manuscript!!))
+    File(filesDir,"nadir-manuscript.txt").writeText(manuscript!!.plainText())
+    withContext(Dispatchers.Main){storyText.text=turn.prose;metrics.text="Turno "+turn.story.turn+" · mundo + manuscrito guardados · "+(System.currentTimeMillis()-started)+" ms"}
+   }
    catch(t:Throwable){withContext(Dispatchers.Main){storyText.text="Error local: "+(t.message?:"desconocido")}}
    finally{withContext(Dispatchers.Main){send.isEnabled=true}}
   }
