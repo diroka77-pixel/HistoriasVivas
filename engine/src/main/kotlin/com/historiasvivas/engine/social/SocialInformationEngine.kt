@@ -21,7 +21,8 @@ class SocialInformationEngine {
    InformationChannel.DIRECT_TESTIMONY->55; InformationChannel.MESSAGE->50; InformationChannel.SECOND_HAND->38; InformationChannel.RUMOR->25
   }
   val sourceReliability=testimony.reliability?:baseline
-  val confidence=(sourceReliability+perceivedTrust/3).coerceIn(5,90)
+  val sociallyAdjusted=(sourceReliability+perceivedTrust/3).coerceIn(5,90)
+  val confidence=if(testimony.channel==InformationChannel.RUMOR) sociallyAdjusted.coerceAtMost(sourceReliability) else sociallyAdjusted
   return HeardClaim(testimony.id,listenerId,testimony.speakerId,testimony.claim,confidence,testimony.turn,testimony.channel)
  }
  fun asBelief(heard:HeardClaim)=Belief(
