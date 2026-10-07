@@ -17,16 +17,23 @@ data class Discovery(
  val eventId:String,
  val characterId:String,
  val channel:DiscoveryChannel,
- val interpretation:String
+ val interpretation:String,
+ val sourceId:String?=null
 )
 
 class KnowledgeGate {
  fun visible(events:List<HiddenEvent>,characterId:String):List<HiddenEvent> =
   events.filter{characterId in it.knownBy || characterId in it.discoveredBy}
- fun discover(events:List<HiddenEvent>,discovery:Discovery):List<HiddenEvent> =
-  events.map{event->
+ fun discover(events:List<HiddenEvent>,discovery:Discovery):List<HiddenEvent>{
+  if(!isGrounded(discovery))return events
+  return events.map{event->
    if(event.id==discovery.eventId && event.discoverable)
     event.copy(discoveredBy=event.discoveredBy+discovery.characterId)
    else event
   }
+ }
+ private fun isGrounded(discovery:Discovery):Boolean{
+  if(discovery.interpretation.isBlank())return false
+  return discovery.channel==DiscoveryChannel.WITNESSED || !discovery.sourceId.isNullOrBlank()
+ }
 }
