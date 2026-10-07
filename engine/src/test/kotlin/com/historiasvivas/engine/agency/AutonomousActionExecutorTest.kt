@@ -36,4 +36,26 @@ class AutonomousActionExecutorTest {
   assertTrue(after.world.discovery.evidence.values.none{it.discoveredBy=="daniel"})
  }
 
+ @Test fun autonomousInvestigationChoosesMostSalientObservableSignal(){
+  val erik=Character("erik","Erik")
+  val low=WorldSignal("low","ruins",sense=SignalSense.SIGHT,surface="A faint mark",createdTurn=5,salience=30)
+  val high=WorldSignal("high","ruins",sense=SignalSense.RADIO,surface="A strong repeating pulse",createdTurn=5,salience=90)
+  val story=Story(
+   "s","Nadir","p",
+   world=WorldState(
+    characters=mapOf("erik" to erik),
+    spatial=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","ruins"))),
+    discovery=DiscoveryState(signals=mapOf(low.id to low,high.id to high))
+   ),
+   turn=12
+  )
+  val plan=AutonomousActionPlan("plan","erik","h",AutonomousActionKind.INVESTIGATE,60,motivation="private",turn=12)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  assertEquals(SignalStatus.INVESTIGATED,after.world.discovery.signals.getValue("high").statusFor("erik"))
+  assertEquals(SignalStatus.UNNOTICED,after.world.discovery.signals.getValue("low").statusFor("erik"))
+  assertTrue(after.world.discovery.evidence.values.any{it.signalId=="high"&&it.discoveredBy=="erik"})
+  assertTrue(after.world.discovery.evidence.values.none{it.signalId=="low"&&it.discoveredBy=="erik"})
+ }
+
 }
