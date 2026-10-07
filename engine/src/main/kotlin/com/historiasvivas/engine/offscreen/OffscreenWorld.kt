@@ -1,6 +1,9 @@
 package com.historiasvivas.engine.offscreen
 import kotlinx.serialization.Serializable
 import com.historiasvivas.engine.agency.AgencyIntent
+import com.historiasvivas.engine.discovery.Evidence
+import com.historiasvivas.engine.social.InformationChannel
+import com.historiasvivas.engine.social.Testimony
 
 @Serializable enum class DiscoveryChannel { WITNESSED, TOLD, RUMOR, EVIDENCE, INVESTIGATION }
 @Serializable data class HiddenEvent(
@@ -20,23 +23,40 @@ data class Discovery(
  val interpretation:String,
  val sourceId:String?=null
 )
+data class DiscoverySources(
+ val evidence:Map<String,Evidence> = emptyMap(),
+ val testimonies:Map<String,Testimony> = emptyMap()
+)
 
 class KnowledgeGate {
  fun visible(events:List<HiddenEvent>,characterId:String):List<HiddenEvent> =
   events.filter{characterId in it.knownBy || characterId in it.discoveredBy}
- fun discover(events:List<HiddenEvent>,discovery:Discovery):List<HiddenEvent>{
-  if(!isGrounded(discovery))return events
+ fun discover(
+  events:List<HiddenEvent>,
+  discovery:Discovery,
+  sources:DiscoverySources=DiscoverySources()
+ ):List<HiddenEvent>{
+  if(!isGrounded(discovery,sources))return events
   return events.map{event->
    if(event.id==discovery.eventId && event.discoverable)
     event.copy(discoveredBy=event.discoveredBy+discovery.characterId)
    else event
   }
  }
- private fun isGrounded(discovery:Discovery):Boolean{
+ private fun isGrounded(discovery:Discovery,sources:DiscoverySources):Boolean{
   if(discovery.interpretation.isBlank())return false
+  val sourceId=discovery.sourceId
   return when(discovery.channel){
-   DiscoveryChannel.TOLD,DiscoveryChannel.RUMOR->!discovery.sourceId.isNullOrBlank()
-   DiscoveryChannel.WITNESSED,DiscoveryChannel.EVIDENCE,DiscoveryChannel.INVESTIGATION->true
+   DiscoveryChannel.WITNESSED->sourceId.isNullOrBlank()
+   DiscoveryChannel.TOLD->sourceId?.let{sources.testimonies[it]}?.let{
+    it.channel!=InformationChannel.RUMOR
+   }?:false
+   DiscoveryChannel.RUMOR->sourceId?.let{sources.testimonies[it]}?.let{
+    it.channel==InformationChannel.RUMOR
+   }?:false
+   DiscoveryChannel.EVIDENCE,DiscoveryChannel.INVESTIGATION->sourceId?.let{sources.evidence[it]}?.let{
+    it.discoveredBy==discovery.characterId
+   }?:false
   }
  }
 }

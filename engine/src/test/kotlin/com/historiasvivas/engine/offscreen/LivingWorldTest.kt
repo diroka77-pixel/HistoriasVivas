@@ -1,5 +1,6 @@
 package com.historiasvivas.engine.offscreen
 import com.historiasvivas.engine.character.*
+import com.historiasvivas.engine.discovery.Evidence
 import com.historiasvivas.engine.model.*
 import kotlin.test.*
 class LivingWorldTest {
@@ -12,7 +13,12 @@ class LivingWorldTest {
   val hidden=actions.first().hiddenEvent
   assertEquals("erik",hidden.actorId)
   assertTrue(KnowledgeGate().visible(listOf(hidden),"daniel").isEmpty())
-  val discovered=KnowledgeGate().discover(listOf(hidden),Discovery(hidden.id,"daniel",DiscoveryChannel.EVIDENCE,"I found evidence"))
+  val evidence=Evidence("evidence-1","offscreen-trace","Physical evidence of Erik's action",70,2,"daniel")
+  val discovered=KnowledgeGate().discover(
+   listOf(hidden),
+   Discovery(hidden.id,"daniel",DiscoveryChannel.EVIDENCE,"I found evidence",sourceId=evidence.id),
+   DiscoverySources(evidence=mapOf(evidence.id to evidence))
+  )
   assertEquals(1,KnowledgeGate().visible(discovered,"daniel").size)
  }
 }

@@ -1,7 +1,9 @@
 package com.historiasvivas.engine
 import com.historiasvivas.engine.character.*
+import com.historiasvivas.engine.discovery.Evidence
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.offscreen.*
+import com.historiasvivas.engine.social.*
 import kotlin.test.*
 
 class OffscreenWorldTest {
@@ -11,10 +13,15 @@ class OffscreenWorldTest {
   assertTrue(gate.visible(listOf(event),"daniel").isEmpty())
   assertEquals(1,gate.visible(listOf(event),"erik").size)
  }
- @Test fun evidenceCanRevealHiddenEventLater(){
+ @Test fun existingEvidenceOwnedByDiscovererCanRevealHiddenEvent(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val evidence=Evidence("evidence-blood-1","blood-trace","Blood near the entrance",70,7,"daniel")
   val gate=KnowledgeGate()
-  val updated=gate.discover(listOf(event),Discovery("h1","daniel",DiscoveryChannel.EVIDENCE,"Found Erik's blood near the entrance",sourceId="evidence-blood-1"))
+  val updated=gate.discover(
+   listOf(event),
+   Discovery("h1","daniel",DiscoveryChannel.EVIDENCE,"Found Erik's blood near the entrance",sourceId=evidence.id),
+   DiscoverySources(evidence=mapOf(evidence.id to evidence))
+  )
   assertEquals(1,gate.visible(updated,"daniel").size)
  }
  @Test fun absentCharacterCanActOffscreen(){
@@ -34,6 +41,45 @@ class OffscreenWorldTest {
   )
   assertTrue(gate.visible(unchanged,"daniel").isEmpty())
  }
+ @Test fun inventedSourceIdCannotRevealHiddenEvent(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val discovery=Discovery("h1","daniel",DiscoveryChannel.TOLD,"Elena told Daniel",sourceId="invented-testimony")
+  val updated=KnowledgeGate().discover(listOf(event),discovery,DiscoverySources())
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
+ }
+ @Test fun sourceMustMatchTheDeclaredChannel(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val testimony=Testimony(
+   id="t1",speakerId="elena",claim="Erik entered the ruins",subject="erik",turn=6,
+   channel=InformationChannel.DIRECT_TESTIMONY
+  )
+  val discovery=Discovery("h1","daniel",DiscoveryChannel.RUMOR,"A rumor reaches Daniel",sourceId=testimony.id)
+  val updated=KnowledgeGate().discover(
+   listOf(event),discovery,DiscoverySources(testimonies=mapOf(testimony.id to testimony))
+  )
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
+ }
+ @Test fun registeredRumorCanRevealHiddenEvent(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val rumor=Testimony(
+   id="rumor-1",speakerId="elena",claim="Erik entered the ruins",subject="erik",turn=6,
+   channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN
+  )
+  val discovery=Discovery("h1","daniel",DiscoveryChannel.RUMOR,"Daniel hears the rumor",sourceId=rumor.id)
+  val updated=KnowledgeGate().discover(
+   listOf(event),discovery,DiscoverySources(testimonies=mapOf(rumor.id to rumor))
+  )
+  assertEquals(1,KnowledgeGate().visible(updated,"daniel").size)
+ }
+ @Test fun evidenceDiscoveredBySomeoneElseCannotRevealEvent(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val evidence=Evidence("e1","trace","Fresh tracks",60,6,"elena")
+  val discovery=Discovery("h1","daniel",DiscoveryChannel.INVESTIGATION,"Daniel infers Erik passed",sourceId=evidence.id)
+  val updated=KnowledgeGate().discover(
+   listOf(event),discovery,DiscoverySources(evidence=mapOf(evidence.id to evidence))
+  )
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
+ }
  @Test fun witnessedEventCanBeKnownWithoutIndirectSource(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
   val gate=KnowledgeGate()
@@ -42,5 +88,11 @@ class OffscreenWorldTest {
    Discovery("h1","daniel",DiscoveryChannel.WITNESSED,"Daniel sees Erik cross the entrance")
   )
   assertEquals(1,gate.visible(updated,"daniel").size)
+ }
+ @Test fun witnessedEventRejectsFabricatedSource(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val discovery=Discovery("h1","daniel",DiscoveryChannel.WITNESSED,"Daniel sees Erik",sourceId="unneeded")
+  val updated=KnowledgeGate().discover(listOf(event),discovery)
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
  }
 }
