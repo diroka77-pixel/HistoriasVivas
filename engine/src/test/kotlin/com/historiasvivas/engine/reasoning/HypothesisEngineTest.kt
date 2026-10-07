@@ -11,8 +11,12 @@ class HypothesisEngineTest {
   val e2=Evidence("e2","ruins-b","Repeated pulse",70,3,"daniel")
   val engine=HypothesisEngine(); val h=engine.formulate("daniel","ruins","The clues share a source",listOf(e1,e2),emptyList(),4)!!
   assertTrue(h.confidence>=40)
-  val contradiction=Evidence("e3","ruins-c","Independent origin confirmed",95,8,"daniel")
-  val revised=engine.update(h,emptyList(),listOf(contradiction,contradiction,contradiction),8)
+  val contradictions=listOf(
+   Evidence("e3","ruins-c","Independent origin confirmed",95,8,"daniel"),
+   Evidence("e4","ruins-d","Second independent origin confirmed",90,8,"daniel"),
+   Evidence("e5","ruins-e","Timing rules out a common source",85,8,"daniel")
+  )
+  val revised=engine.update(h,emptyList(),contradictions,8)
   assertTrue(revised.confidence<h.confidence)
   assertTrue(revised.status==HypothesisStatus.WEAKENED||revised.status==HypothesisStatus.REJECTED)
  }
