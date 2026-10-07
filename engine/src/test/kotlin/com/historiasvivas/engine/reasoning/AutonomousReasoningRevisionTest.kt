@@ -31,4 +31,27 @@ class AutonomousReasoningRevisionTest {
   assertTrue(revised.confidence>old.confidence)
   assertEquals(12,revised.revisedTurn)
  }
+ @Test fun explicitContradictoryEvidenceWeakensExistingHypothesisWithoutTextGuessing(){
+  val claim="The ruins may contain an active source"
+  val e1=Evidence("e1","pulse-a","First pulse",70,8,"erik")
+  val e2=Evidence("e2","pulse-b","Second pulse",70,9,"erik")
+  val e3=Evidence("e3","silence","A complete scan finds no active emission",90,12,"erik")
+  val support=Interpretation("support","erik","pulse-a",claim,70,setOf("e1","e2"))
+  val contradiction=Interpretation("against","erik","silence","The scan conflicts with the active-source theory",80,setOf("e3"),relation=InterpretationRelation.CONTRADICTS,relatedHypothesisId="old")
+  val old=Hypothesis("old","erik","pulse-a+pulse-b",claim,55,setOf("e1","e2"),createdTurn=9,revisedTurn=9,status=HypothesisStatus.PLAUSIBLE)
+  val story=Story(
+   "s","Nadir","p",
+   world=WorldState(
+    characters=mapOf("erik" to Character("erik","Erik",mind=CharacterMind())),
+    discovery=DiscoveryState(evidence=mapOf(e1.id to e1,e2.id to e2,e3.id to e3),interpretations=mapOf(support.id to support,contradiction.id to contradiction)),
+    reasoning=ReasoningState(hypotheses=mapOf(old.id to old))
+   ),turn=12
+  )
+  val revised=AutonomousReasoningEngine().infer(story,"erik").single().hypothesis
+  assertEquals("old",revised.id)
+  assertTrue(revised.confidence<old.confidence)
+  assertEquals(setOf("e3"),revised.contradictingEvidenceIds)
+  assertEquals(HypothesisStatus.WEAKENED,revised.status)
+ }
+
 }
