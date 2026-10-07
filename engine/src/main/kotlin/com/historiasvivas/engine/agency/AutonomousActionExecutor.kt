@@ -4,6 +4,7 @@ import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.spatial.SpatialEngine
 import com.historiasvivas.engine.discovery.DiscoveryEngine
 import com.historiasvivas.engine.discovery.InvestigationEngine
+import com.historiasvivas.engine.social.*
 
 @Serializable enum class ActionExecutionStatus { STARTED, BLOCKED, DEFERRED }
 @Serializable data class AutonomousActionResult(
@@ -13,7 +14,9 @@ import com.historiasvivas.engine.discovery.InvestigationEngine
 class AutonomousActionExecutor(
  private val spatial:SpatialEngine=SpatialEngine(),
  private val discovery:DiscoveryEngine=DiscoveryEngine(),
- private val investigation:InvestigationEngine=InvestigationEngine()
+ private val investigation:InvestigationEngine=InvestigationEngine(),
+ private val disclosure:DisclosureEngine=DisclosureEngine(),
+ private val social:SocialInformationEngine=SocialInformationEngine()
 ){
  fun execute(story:Story,plan:AutonomousActionPlan):Pair<Story,AutonomousActionResult>{
   val c=story.world.characters[plan.characterId]
@@ -63,7 +66,35 @@ class AutonomousActionExecutor(
      story.copy(world=story.world.copy(spatial=after)) to AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Withdrawal started",event)
     }
    }
-   AutonomousActionKind.WARN,AutonomousActionKind.PROTECT,AutonomousActionKind.HIDE_EVIDENCE->
+   AutonomousActionKind.WARN->{
+    val hypothesis=story.world.reasoning.hypotheses[plan.hypothesisId]
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Hypothesis unavailable")
+    val location=spatial.locationOf(story.world.spatial,plan.characterId)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Speaker is not at a stable location")
+    val listenerId=plan.targetCharacterId?:spatial.presentAt(story.world.spatial,location)
+     .filter{it!=plan.characterId&&story.world.characters[it]?.alive==true}.sorted().firstOrNull()
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No listener present")
+    if(listenerId !in spatial.presentAt(story.world.spatial,location))
+     return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Listener is not present")
+    val listener=story.world.characters[listenerId]
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Listener unavailable")
+    val decision=disclosure.decide(story,plan.characterId,listenerId,hypothesis)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Disclosure unavailable")
+    val testimony=disclosure.toTestimony(decision,hypothesis)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Speaker delays warning")
+    val heard=social.hear(testimony,listenerId,listener.mind)
+    val belief=social.asBelief(heard)
+    val updatedListener=listener.copy(mind=listener.mind.copy(beliefs=listener.mind.beliefs+belief))
+    val knowledge=story.world.socialKnowledge.copy(
+     testimonies=story.world.socialKnowledge.testimonies+(testimony.id to testimony),
+     heardClaims=story.world.socialKnowledge.heardClaims+(testimony.id+":"+listenerId to heard),
+     disclosureHistory=story.world.socialKnowledge.disclosureHistory+(decision.id to decision)
+    )
+    val event=StoryEvent(plan.id+"-warning",story.turn,c.name+" warns "+listener.name+" about a perceived danger",setOf(c.id,listenerId),setOf("autonomous","warning"))
+    story.copy(world=story.world.copy(characters=story.world.characters+(listenerId to updatedListener),socialKnowledge=knowledge)) to
+     AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Warning delivered",event)
+   }
+   AutonomousActionKind.PROTECT,AutonomousActionKind.HIDE_EVIDENCE->
     story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Requires scene/world-specific resolution")
   }
  }
