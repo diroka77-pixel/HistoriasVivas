@@ -14,6 +14,16 @@ class DiscoveryEngineTest {
   val signal=WorldSignal("radio","settlement",sense=SignalSense.RADIO,surface="A weak repeating pulse",hiddenCause="Old beacon",createdTurn=8)
   val engine=DiscoveryEngine(); val ignored=engine.ignore(DiscoveryState(mapOf("radio" to signal)),"radio","daniel")
   assertEquals(SignalStatus.IGNORED,ignored.signals["radio"]!!.statusFor("daniel"))
+  assertTrue(engine.visibleAt(ignored,"daniel","settlement").isEmpty())
   assertEquals(SignalStatus.UNNOTICED,ignored.signals["radio"]!!.statusFor("elena"))
+  assertEquals(listOf("radio"),engine.visibleAt(ignored,"elena","settlement").map{it.id})
  }
+ @Test fun ignoredJourneySignalDoesNotImmediatelyReappearForSameTraveller(){
+  val signal=WorldSignal("tracks","forest",routeFrom="settlement",routeTo="ruins",sense=SignalSense.TRACE,surface="Fresh tracks",createdTurn=4)
+  val engine=DiscoveryEngine()
+  val ignored=engine.ignore(DiscoveryState(mapOf(signal.id to signal)),signal.id,"daniel")
+  assertTrue(engine.visibleOnJourney(ignored,"daniel","settlement","ruins").isEmpty())
+  assertEquals(listOf("tracks"),engine.visibleOnJourney(ignored,"elena","settlement","ruins").map{it.id})
+ }
+
 }
