@@ -55,4 +55,34 @@ class AutonomousCognitionEndToEndTest {
   assertTrue(story.world.reasoning.hypotheses.values.none{it.characterId=="daniel"})
   assertTrue(story.world.discovery.interpretations.values.none{it.characterId=="daniel"})
  }
+ @Test fun strongLocationHypothesisForcesTravelAndChangesPhysicalWorld(){
+  val erik=Character("erik","Erik",mind=CharacterMind(personality=PersonalityProfile(mapOf("courage" to 60))))
+  val story=Story(
+   "s","Nadir","p",
+   world=WorldState(
+    characters=mapOf("erik" to erik),
+    locations=mapOf("settlement" to Location("settlement","Settlement"),"ruins" to Location("ruins","Ruins")),
+    spatial=SpatialState(
+     positions=mapOf("erik" to CharacterPosition("erik","settlement")),
+     routes=listOf(Route("settlement","ruins",3))
+    )
+   ),
+   turn=12,protagonistId="daniel"
+  )
+  val hypothesis=Hypothesis(
+   "h","erik","ruins","The ruins contain an active source",80,
+   supportingEvidenceIds=setOf("e1","e2"),createdTurn=12,status=HypothesisStatus.STRONG
+  )
+  val plan=HypothesisAgencyEngine().plan(story,"erik",hypothesis)!!
+  assertEquals(AutonomousActionKind.TRAVEL,plan.kind)
+  assertEquals("ruins",plan.targetLocationId)
+  val (after,result)=AutonomousActionExecutor().execute(story,plan)
+  assertEquals(ActionExecutionStatus.STARTED,result.status)
+  val journey=after.world.spatial.journeys.getValue("erik")
+  assertEquals("settlement",journey.from)
+  assertEquals("ruins",journey.to)
+  assertEquals(3,journey.remainingUnits)
+  assertNull(SpatialEngine().locationOf(after.world.spatial,"erik"))
+ }
+
 }
