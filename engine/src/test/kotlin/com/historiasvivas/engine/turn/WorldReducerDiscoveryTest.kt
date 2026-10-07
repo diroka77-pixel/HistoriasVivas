@@ -29,4 +29,25 @@ class WorldReducerDiscoveryTest {
   assertEquals(1,next.world.discovery.signals.keys.count{it=="pressure-fauna"})
   assertEquals(listOf("pressure-fauna"),DiscoveryEngine().visibleAt(next.world.discovery,"daniel",null).map{it.id})
  }
+ @Test fun progressingJourneyReactivatesIgnoredTraceWithoutDuplicatingIt(){
+  val trace=WorldSignal(
+   id="trace-erik-2",locationId=null,routeFrom="settlement",routeTo="ruins",
+   sense=SignalSense.TRACE,surface="Fresh signs show that someone has just entered the route",
+   hiddenCause="journey:erik:settlement:ruins:elapsed=0",createdTurn=2,salience=55,persistent=true,
+   noticedBy=setOf("daniel"),ignoredBy=setOf("daniel"),lastChangedTurn=2
+  )
+  val spatial=com.historiasvivas.engine.spatial.SpatialState(
+   positions=mapOf("erik" to com.historiasvivas.engine.spatial.CharacterPosition("erik","settlement",2)),
+   journeys=mapOf("erik" to com.historiasvivas.engine.spatial.Journey("erik","settlement","ruins",3,0,2))
+  )
+  val story=Story("s","Nadir","p",world=WorldState(spatial=spatial,discovery=DiscoveryState(signals=mapOf(trace.id to trace))),turn=2)
+  val next=WorldReducer().apply(story,WorldDelta(event=StoryEvent("player-3",3,"Daniel waits")))
+  val evolved=next.world.discovery.signals.getValue(trace.id)
+  assertEquals(1,evolved.revision)
+  assertEquals(60,evolved.salience)
+  assertEquals(3,evolved.lastChangedTurn)
+  assertEquals(1,next.world.discovery.signals.keys.count{it==trace.id})
+  assertEquals(listOf(trace.id),DiscoveryEngine().visibleOnJourney(next.world.discovery,"daniel","settlement","ruins").map{it.id})
+ }
+
 }
