@@ -28,12 +28,14 @@ class HypothesisAgencyLocationTest {
  @Test fun rejectedHypothesisProducesNoAutonomousPlan(){
   assertNull(HypothesisAgencyEngine().plan(storyAt("settlement"),"erik",hypothesis(HypothesisStatus.REJECTED)))
  }
- @Test fun npcDoesNotCreateInvestigationPlanWhenNoObservableClueRemains(){
+ @Test fun exhaustedLocalCluesDoNotEraseTheNpcDecision(){
   val base=storyAt("ruins")
   val exhausted=base.copy(world=base.world.copy(discovery=DiscoveryState(
    signals=base.world.discovery.signals.mapValues{(_,s)->s.copy(investigatedBy=setOf("erik"))}
   )))
-  assertNull(HypothesisAgencyEngine().plan(exhausted,"erik",hypothesis()))
+  val plan=HypothesisAgencyEngine().plan(exhausted,"erik",hypothesis())
+  assertNotNull(plan)
+  assertEquals(AutonomousActionKind.INVESTIGATE,plan.kind)
  }
 
 }
