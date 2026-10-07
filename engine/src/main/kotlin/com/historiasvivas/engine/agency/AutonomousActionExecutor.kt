@@ -41,7 +41,29 @@ class AutonomousActionExecutor(
     story.copy(world=story.world.copy(discovery=outcome.state)) to
      AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Observable signal investigated",event)
    }
-   AutonomousActionKind.WARN,AutonomousActionKind.PROTECT,AutonomousActionKind.HIDE_EVIDENCE,AutonomousActionKind.WITHDRAW->
+   AutonomousActionKind.WITHDRAW->{
+    val from=spatial.locationOf(story.world.spatial,plan.characterId)
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"Character is not at a stable location")
+    val destination=story.world.spatial.routes.asSequence()
+     .filter{!it.blocked}
+     .mapNotNull{route->
+      when{
+       route.from==from->route.to
+       route.bidirectional&&route.to==from->route.from
+       else->null
+      }
+     }
+     .filter{it!=plan.targetLocationId}
+     .distinct().sorted().firstOrNull()
+     ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No safe withdrawal route")
+    val after=spatial.startJourney(story.world.spatial,plan.characterId,destination,story.turn)
+    if(after==story.world.spatial) story to AutonomousActionResult(plan.id,ActionExecutionStatus.BLOCKED,"No viable withdrawal route")
+    else{
+     val event=StoryEvent(plan.id+"-withdrawal",story.turn,c.name+" withdraws from a perceived threat",setOf(c.id),setOf("autonomous","withdraw"))
+     story.copy(world=story.world.copy(spatial=after)) to AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Withdrawal started",event)
+    }
+   }
+   AutonomousActionKind.WARN,AutonomousActionKind.PROTECT,AutonomousActionKind.HIDE_EVIDENCE->
     story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Requires scene/world-specific resolution")
   }
  }
