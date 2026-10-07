@@ -69,4 +69,13 @@ class DiscoveryEngineTest {
   assertEquals(listOf("hidden"),engine.visibleAt(changed,"erik","ruins").map{it.id})
  }
 
+ @Test fun zeroSalienceRouteSignalIsNotAutomaticallyObservableButCanReactivate(){
+  val hidden=WorldSignal("hidden-route",null,routeFrom="settlement",routeTo="ruins",sense=SignalSense.TRACE,surface="Erased trail",createdTurn=1,salience=0,persistent=true)
+  val state=DiscoveryState(signals=mapOf(hidden.id to hidden))
+  val engine=DiscoveryEngine()
+  assertTrue(engine.visibleOnJourney(state,"erik","settlement","ruins").isEmpty())
+  val changed=engine.reactivate(state,hidden.id,3,newSurface="Rain exposes a fresh indentation",newSalience=35)
+  assertEquals(listOf("hidden-route"),engine.visibleOnJourney(changed,"erik","settlement","ruins").map{it.id})
+ }
+
 }
