@@ -20,15 +20,18 @@ class AutonomousTurnScheduler(
   if(maxCharacters<=0)return story to AutonomousCycle()
   val recentlyPlanned=story.world.autonomousAgency.plans.values
    .filter{story.turn-it.turn<cooldownTurns}.map{it.characterId}.toSet()
+  val alreadyActedThisTurn=story.world.hiddenEvents.asSequence()
+   .filter{it.turn==story.turn}.map{it.actorId}.toSet()
   val eligible=story.world.characters.values.asSequence()
-   .filter{it.alive&&it.id !in presentCharacterIds&&it.id !in recentlyPlanned}
+   .filter{it.alive&&it.id !in presentCharacterIds&&it.id !in recentlyPlanned&&it.id !in alreadyActedThisTurn}
    .filter{spatial.locationOf(story.world.spatial,it.id)!=null}
-   .sortedBy{it.id}.take(maxCharacters).toList()
+   .sortedBy{it.id}.toList()
 
   var current=story
   val plans=mutableListOf<AutonomousActionPlan>()
   val results=mutableListOf<AutonomousActionResult>()
   eligible.forEach{character->
+   if(plans.size>=maxCharacters)return@forEach
    val inference=reasoning.infer(current,character.id,current.turn).firstOrNull()?:return@forEach
    val plan=planner.plan(current,character.id,inference.hypothesis)?:return@forEach
    val (after,result)=executor.execute(current,plan)
