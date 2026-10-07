@@ -5,6 +5,7 @@ import com.historiasvivas.engine.character.CharacterMind
 import com.historiasvivas.engine.offscreen.HiddenEvent
 import com.historiasvivas.engine.world.EnvironmentState
 import com.historiasvivas.engine.director.DirectorState
+import com.historiasvivas.engine.spatial.SpatialState
 
 @Serializable enum class StoryStatus { ACTIVE, ENDING, FINISHED }
 @Serializable enum class FactVisibility { PUBLIC, LIMITED, HIDDEN }
@@ -33,6 +34,7 @@ import com.historiasvivas.engine.director.DirectorState
  val scopedFacts:List<WorldFact> = emptyList(),
  val hiddenEvents:List<HiddenEvent> = emptyList(),
  val environment:EnvironmentState=EnvironmentState(),
+ val spatial:SpatialState=SpatialState(),
  val worldClock:Long=0
 )
 @Serializable data class Character(val id:String,val name:String,val traits:Set<String> = emptySet(),val goals:List<String> = emptyList(),val knowledge:Set<String> = emptySet(),val mind:CharacterMind=CharacterMind(),val alive:Boolean=true)
