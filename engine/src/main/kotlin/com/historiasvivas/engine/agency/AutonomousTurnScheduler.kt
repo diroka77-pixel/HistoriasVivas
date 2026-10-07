@@ -33,6 +33,9 @@ class AutonomousTurnScheduler(
   eligible.forEach{character->
    if(plans.size>=maxCharacters)return@forEach
    val inference=reasoning.infer(current,character.id,current.turn).firstOrNull()?:return@forEach
+   current=current.copy(world=current.world.copy(reasoning=current.world.reasoning.copy(
+    hypotheses=current.world.reasoning.hypotheses+(inference.hypothesis.id to inference.hypothesis)
+   )))
    val plan=planner.plan(current,character.id,inference.hypothesis)?:return@forEach
    val (after,result)=executor.execute(current,plan)
    val actionHistory=result.event?.let{event-> HiddenEvent(id="hidden-"+event.id,turn=event.turn,actorId=plan.characterId,summary=event.summary) }
@@ -40,10 +43,7 @@ class AutonomousTurnScheduler(
     plans=after.world.autonomousAgency.plans+(plan.id to plan),
     results=after.world.autonomousAgency.results+(plan.id to result)
    )
-   val reasoningState=after.world.reasoning.copy(
-    hypotheses=after.world.reasoning.hypotheses+(inference.hypothesis.id to inference.hypothesis)
-   )
-   current=after.copy(world=after.world.copy(autonomousAgency=agency,reasoning=reasoningState,hiddenEvents=(after.world.hiddenEvents+listOfNotNull(actionHistory)).distinctBy{it.id}))
+   current=after.copy(world=after.world.copy(autonomousAgency=agency,hiddenEvents=(after.world.hiddenEvents+listOfNotNull(actionHistory)).distinctBy{it.id}))
    plans+=plan; results+=result
   }
   return current to AutonomousCycle(plans,results)
