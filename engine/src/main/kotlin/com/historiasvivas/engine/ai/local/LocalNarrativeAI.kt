@@ -26,6 +26,9 @@ class LocalNarrativeAI(
 ):NarrativeAI{
  override suspend fun continueStory(request:NarrativeRequest):NarrativeResponse{
   val packet=packetBuilder.build(request.story,protagonistId,request.context.narrativeBeat)
+   .copy(player=packetBuilder.build(request.story,protagonistId,request.context.narrativeBeat).player.copy(
+    recentVisibleEvents=(request.context.relevantMemories.map{it.event}+request.context.recentEvents).distinctBy{it.id}.takeLast(12)
+   ))
   return runtime.generate(packet,request.userAction,config)
  }
 }
