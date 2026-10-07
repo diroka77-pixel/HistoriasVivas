@@ -1,6 +1,8 @@
 package com.historiasvivas.engine.director
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.world.*
+import com.historiasvivas.engine.discovery.*
+import com.historiasvivas.engine.spatial.*
 import kotlin.test.*
 class CausalEventDirectorTest {
  @Test fun oneWeakConditionDoesNotManufactureDrama(){
@@ -27,4 +29,31 @@ class CausalEventDirectorTest {
   val story=Story("s","Nadir","p",world=WorldState(characters=mapOf("erik" to erik),relationships=listOf(Relationship("erik","daniel",trust=-50))),turn=20)
   assertNull(CausalEventDirector().propose(story,lastEmergentTurn=19))
  }
+ @Test fun persistentUnresolvedSignalsCanCreateDiscoveryOpportunityWithoutPrivateCause(){
+  val signals=mapOf(
+   "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Repeating pulse",hiddenCause="secret beacon",createdTurn=1,salience=80),
+   "b" to WorldSignal("b","ruins",sense=SignalSense.TRACE,surface="Fresh machine marks",hiddenCause="hidden team",createdTurn=2,salience=75)
+  )
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to Character("erik","Erik")),
+   discovery=DiscoveryState(signals=signals)
+  ),turn=5)
+  val proposal=CausalEventDirector().propose(story)!!
+  assertEquals(EmergentEventKind.DISCOVERY_OPPORTUNITY,proposal.kind)
+  assertFalse(proposal.summary.contains("secret beacon"))
+  assertFalse(proposal.summary.contains("hidden team"))
+ }
+ @Test fun activeJourneyPlusStrongEnvironmentalPressureCreatesExpeditionDanger(){
+  val env=EnvironmentState(pressures=mapOf("weather" to WorldPressure("weather",75,1,"Severe storm")))
+  val spatial=SpatialState(
+   positions=mapOf("erik" to CharacterPosition("erik","settlement")),
+   routes=listOf(Route("settlement","ruins",3))
+  )
+  val started=SpatialEngine().startJourney(spatial,"erik","ruins",4)
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to Character("erik","Erik")),environment=env,spatial=started
+  ),turn=5)
+  assertEquals(EmergentEventKind.EXPEDITION_DANGER,CausalEventDirector().propose(story)?.kind)
+ }
+
 }
