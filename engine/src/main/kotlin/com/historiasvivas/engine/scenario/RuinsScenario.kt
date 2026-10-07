@@ -2,6 +2,7 @@ package com.historiasvivas.engine.scenario
 import com.historiasvivas.engine.character.*
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.world.*
+import com.historiasvivas.engine.spatial.*
 
 object RuinsScenario {
  fun create():Story {
@@ -31,6 +32,10 @@ object RuinsScenario {
     secrets=listOf(
      Secret("signal","A repeating signal originates beneath the ruins",knownBy=setOf("erik")),
      Secret("council","The council detected the signal before landing",knownBy=emptySet())
+    ),
+    spatial=SpatialState(
+     positions=mapOf("daniel" to CharacterPosition("daniel","settlement"),"elena" to CharacterPosition("elena","settlement"),"erik" to CharacterPosition("erik","ruins")),
+     routes=listOf(Route("settlement","ruins",3),Route("settlement","forest",2),Route("forest","ruins",2))
     ),
     environment=EnvironmentState(
      resources=mapOf("water" to ResourcePool("water",65,100,18),"food" to ResourcePool("food",55,100,15),"energy" to ResourcePool("energy",70,100,20)),
