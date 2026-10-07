@@ -13,5 +13,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "HistoriasVivas"
 include(":engine")
-include(":android-lab")
-include(":llama-android-lib")
+if (providers.gradleProperty("includeAndroidLab").orNull == "true") {
+ include(":android-lab")
+ include(":llama-android-lib")
+}
