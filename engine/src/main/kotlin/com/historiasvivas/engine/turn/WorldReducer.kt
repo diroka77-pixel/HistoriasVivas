@@ -20,7 +20,9 @@ class WorldReducer(
   val ids=story.world.pendingConsequences.map{it.id}.toSet()
   require(delta.consequencesToSchedule.none{it.id in ids}){"Duplicate consequence id"}
   val environmentTick=environmentSimulator.tick(story)
-  val generatedSignals=discoveryGenerator.generate(story)
+  val advancedSpatial=spatialEngine.advanceJourneys(story.world.spatial,1,story.turn+1)
+  val causalSnapshot=story.copy(turn=story.turn+1,world=story.world.copy(environment=environmentTick.next,spatial=advancedSpatial))
+  val generatedSignals=discoveryGenerator.generate(causalSnapshot)
   val newSignals=generatedSignals.filterNot{it.id in story.world.discovery.signals}.associateBy{it.id}
   val discovery=story.world.discovery.copy(signals=story.world.discovery.signals+newSignals)
   val consequences=story.world.pendingConsequences.map{if(it.id in delta.consequencesToResolve)it.copy(resolved=true)else it}+delta.consequencesToSchedule
@@ -37,7 +39,7 @@ class WorldReducer(
     pendingConsequences=consequences,
     hiddenEvents=(story.world.hiddenEvents+delta.hiddenEventsToAdd).distinctBy{it.id},
     environment=environmentTick.next,
-    spatial=spatialEngine.advanceJourneys(story.world.spatial,1,story.turn+1),
+    spatial=advancedSpatial,
     discovery=discovery,
     worldClock=story.world.worldClock+1
    )
