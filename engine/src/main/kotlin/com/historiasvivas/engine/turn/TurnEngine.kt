@@ -6,6 +6,7 @@ import com.historiasvivas.engine.validation.ContinuityValidator
 import com.historiasvivas.engine.offscreen.OffscreenSimulator
 import com.historiasvivas.engine.director.*
 import com.historiasvivas.engine.agency.AutonomousTurnScheduler
+import com.historiasvivas.engine.spatial.SpatialEngine
 
 class TurnEngine(
  private val ai:NarrativeAI,
@@ -15,7 +16,8 @@ class TurnEngine(
  private val offscreen:OffscreenSimulator=OffscreenSimulator(),
  private val causalWorld:CausalWorldEngine=CausalWorldEngine(),
  private val pacing:EmergentPacingDirector=EmergentPacingDirector(),
- private val autonomousScheduler:AutonomousTurnScheduler=AutonomousTurnScheduler()
+ private val autonomousScheduler:AutonomousTurnScheduler=AutonomousTurnScheduler(),
+ private val spatial:SpatialEngine=SpatialEngine()
 ){
  suspend fun play(story:Story,userAction:String):TurnResult{
   require(story.status==StoryStatus.ACTIVE){"Story is not active"}
@@ -27,7 +29,9 @@ class TurnEngine(
    summary=response.eventSummary.ifBlank{userAction.take(240)},
    participants=response.participantIds,tags=response.tags,permanent=response.canonical
   )
-  val present=(response.participantIds+setOf(story.protagonistId)).filter{it in story.world.characters}.toSet()
+  val protagonistLocation=spatial.locationOf(story.world.spatial,story.protagonistId)
+  val spatiallyPresent=protagonistLocation?.let{spatial.presentAt(story.world.spatial,it)}?:setOf(story.protagonistId)
+  val present=spatiallyPresent.filter{it in story.world.characters}.toSet()
   val offscreenHidden=offscreen.plan(story,present,maxActions=2).map{it.hiddenEvent}
   val causal=causalWorld.advance(story,story.director.lastEmergentTurn)
   val pacingDecision=pacing.decide(story,causal,context.narrativeBeat.mode)
