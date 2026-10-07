@@ -53,7 +53,7 @@ class TurnEngine(
   val reduced=reducer.apply(story,delta)
   val (autonomousStory,_)=autonomousScheduler.run(reduced,present,maxCharacters=1)
   val updatedDirector=autonomousStory.director.copy(
-   lastEmergentTurn=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW) causal.emergentTurn?:autonomousStory.director.lastEmergentTurn else autonomousStory.director.lastEmergentTurn,
+   lastEmergentTurn=causal.emergentTurn?:autonomousStory.director.lastEmergentTurn,
    latentEmergentEventIds=(autonomousStory.director.latentEmergentEventIds+latentIds)-consumedLatentIds,
    latentEmergentEvents=(autonomousStory.director.latentEmergentEvents+latentPublic)-consumedLatentIds
   )
