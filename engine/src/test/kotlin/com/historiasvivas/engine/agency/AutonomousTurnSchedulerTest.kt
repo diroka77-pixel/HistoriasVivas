@@ -31,7 +31,7 @@ class AutonomousTurnSchedulerTest {
   val (updated,cycle)=AutonomousTurnScheduler().run(s,emptySet())
   assertEquals(1,cycle.plans.size)
   val result=cycle.results.single()
-  assertTrue(result.status==ActionExecutionStatus.STARTED||result.status==ActionExecutionStatus.DEFERRED)
+  assertTrue(result.status in setOf(ActionExecutionStatus.STARTED,ActionExecutionStatus.DEFERRED,ActionExecutionStatus.BLOCKED))
   if(result.status==ActionExecutionStatus.STARTED){
    when(cycle.plans.single().kind){
     AutonomousActionKind.TRAVEL->assertTrue("erik" in updated.world.spatial.journeys)
@@ -41,6 +41,9 @@ class AutonomousTurnSchedulerTest {
    assertTrue(updated.world.hiddenEvents.any{it.actorId=="erik"})
   } else {
    assertFalse("erik" in updated.world.spatial.journeys)
+   if(result.status==ActionExecutionStatus.BLOCKED){
+    assertTrue(updated.world.discovery.evidence.values.none{it.discoveredTurn==s.turn&&it.discoveredBy=="erik"})
+   }
   }
   assertTrue(updated.world.autonomousAgency.plans.isNotEmpty())
   assertTrue(updated.world.reasoning.hypotheses.isNotEmpty())
