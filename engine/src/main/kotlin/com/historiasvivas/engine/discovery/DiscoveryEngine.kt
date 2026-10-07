@@ -40,12 +40,13 @@ class DiscoveryEngine {
   val s=state.signals[signalId]?:return state
   return state.copy(signals=state.signals+(signalId to s.copy(noticedBy=s.noticedBy+characterId,ignoredBy=s.ignoredBy+characterId)))
  }
- fun reactivate(state:DiscoveryState,signalId:String,turn:Long,newSurface:String?=null,newSalience:Int?=null):DiscoveryState{
+ fun reactivate(state:DiscoveryState,signalId:String,turn:Long,newSurface:String?=null,newSalience:Int?=null,newHiddenCause:String?=null):DiscoveryState{
   val s=state.signals[signalId]?:return state
   if(!s.persistent || turn<=s.lastChangedTurn)return state
   val updated=s.copy(
    surface=newSurface?:s.surface,
    salience=(newSalience?:s.salience).coerceIn(0,100),
+   hiddenCause=newHiddenCause?:s.hiddenCause,
    ignoredBy=emptySet(),
    revision=s.revision+1,
    lastChangedTurn=turn
