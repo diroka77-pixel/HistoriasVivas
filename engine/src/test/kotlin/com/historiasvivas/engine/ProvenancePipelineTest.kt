@@ -51,14 +51,25 @@ class ProvenancePipelineTest {
   val testimony=disclosure.toTestimony(decision,hypothesis)!!
   assertEquals(hidden.id,testimony.relatedEventId)
 
-  val heard=SocialInformationEngine().hear(testimony,"daniel",daniel.mind)
-  val rumor=RumorEngine().relay(heard,"daniel","maya",11)
-  val heardByMaya=SocialInformationEngine().hear(rumor,"maya",CharacterMind())
+  val social=SocialInformationEngine()
+  val heard=social.hear(testimony,"daniel",daniel.mind)
   assertEquals(hidden.id,heard.relatedEventId)
+  val directlyDiscovered=KnowledgeGate().discover(
+   listOf(hidden),
+   Discovery(hidden.id,"daniel",DiscoveryChannel.TOLD,"Elena tells Daniel what she found",sourceId=testimony.id),
+   DiscoverySources(
+    testimonies=mapOf(testimony.id to testimony),
+    heardClaims=mapOf(testimony.id+":"+heard.listenerId to heard)
+   )
+  )
+  assertEquals(listOf(hidden.id),KnowledgeGate().visible(directlyDiscovered,"daniel").map{it.id})
+
+  val rumor=RumorEngine().relay(heard,"daniel","maya",11)
+  val heardByMaya=social.hear(rumor,"maya",CharacterMind())
+  val rumorBelief=social.asBelief(heardByMaya)
   assertEquals(hidden.id,rumor.relatedEventId)
   assertEquals(hidden.id,heardByMaya.relatedEventId)
-
-  val discovered=KnowledgeGate().discover(
+  val rumorAttempt=KnowledgeGate().discover(
    listOf(hidden),
    Discovery(hidden.id,"maya",DiscoveryChannel.RUMOR,"Daniel relays Elena's account",sourceId=rumor.id),
    DiscoverySources(
@@ -66,6 +77,7 @@ class ProvenancePipelineTest {
     heardClaims=mapOf(rumor.id+":"+heardByMaya.listenerId to heardByMaya)
    )
   )
-  assertEquals(listOf(hidden.id),KnowledgeGate().visible(discovered,"maya").map{it.id})
+  assertEquals(rumor.claim,rumorBelief.claim)
+  assertTrue(KnowledgeGate().visible(rumorAttempt,"maya").isEmpty())
  }
 }
