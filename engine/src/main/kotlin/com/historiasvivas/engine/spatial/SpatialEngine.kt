@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 
 class SpatialEngine {
  fun locationOf(state:SpatialState,characterId:String):String?=if(characterId in state.journeys)null else state.positions[characterId]?.locationId
- fun presentAt(state:SpatialState,locationId:String):Set<String>=
+ fun presentAt(state:SpatialState,locationId:String): Set<String> =
   state.positions.values.filter{it.locationId==locationId&&it.characterId !in state.journeys}.map{it.characterId}.toSet()
  fun travelUnits(state:SpatialState,from:String,to:String):Int?{
   if(from==to)return 0
