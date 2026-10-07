@@ -74,4 +74,22 @@ class TurnEngineTest {
   assertTrue(result.story.director.latentEmergentEventIds.isNotEmpty())
  }
 
+ @Test fun hiddenEmergentEventIsNotDuplicatedIntoPublicLatentQueue()= runBlocking {
+  val ai=object:NarrativeAI{
+   override suspend fun continueStory(request:NarrativeRequest)=NarrativeResponse(prose="Daniel espera.",eventSummary="Daniel espera.")
+  }
+  val traces=mapOf(
+   "a" to EmotionalTrace("a","betrayal",salience=90),
+   "b" to EmotionalTrace("b","fear",salience=80)
+  )
+  val erik=Character("erik","Erik",mind=CharacterMind(emotionalMemory=traces))
+  val start=Story("s4","Nadir","p",world=WorldState(
+   characters=mapOf("daniel" to Character("daniel","Daniel"),"erik" to erik),
+   relationships=listOf(Relationship("erik","daniel",trust=-50))
+  ),turn=5,protagonistId="daniel")
+  val result=TurnEngine(ai).play(start,"Espero.")
+  assertTrue(result.story.world.hiddenEvents.any{it.actorId=="erik"})
+  assertTrue(result.story.director.latentEmergentEventIds.isEmpty())
+ }
+
 }
