@@ -12,10 +12,13 @@ class AutonomousReasoningEngine(private val hypotheses:HypothesisEngine=Hypothes
 
   val interpretedGroups=story.world.discovery.interpretations.values
    .filter{it.characterId==characterId}
-   .mapNotNull{interpretation->
-    val clues=evidence.filter{it.id in interpretation.evidenceIds}
-    if(clues.size>=2) interpretation.hypothesis to clues else null
+   .groupBy{it.hypothesis}
+   .mapNotNull{(claim,interpretations)->
+    val evidenceIds=interpretations.flatMap{it.evidenceIds}.toSet()
+    val clues=evidence.filter{it.id in evidenceIds}
+    if(clues.size>=2) claim to clues else null
    }
+   .sortedBy{it.first}
 
   return interpretedGroups.take(2).mapNotNull{(claim,clues)->
    val subject=clues.map{it.signalId}.distinct().sorted().joinToString("+")
