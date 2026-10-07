@@ -13,7 +13,7 @@ class CausalEventValidator {
   }
   candidate.consequences.forEach{c->
    if(c.earliestTurn<=story.turn)errors+="Consequence cannot predate its cause"
-   if(story.world.pendingConsequences.any{it.id==c.id})errors+="Duplicate consequence"
+   if(story.world.pendingConsequences.any{!it.resolved&&(it.id==c.id||it.description==c.description)})errors+="Duplicate unresolved consequence"
   }
   val stillCausal=when(candidate.source.kind){
    EmergentEventKind.RESOURCE_CRISIS -> story.world.environment.resources.values.any{it.amount<=it.criticalBelow+10}
