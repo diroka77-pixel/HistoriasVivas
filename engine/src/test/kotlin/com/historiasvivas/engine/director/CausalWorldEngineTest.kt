@@ -2,6 +2,8 @@ package com.historiasvivas.engine.director
 import com.historiasvivas.engine.character.*
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.world.*
+import com.historiasvivas.engine.discovery.*
+import com.historiasvivas.engine.spatial.*
 import kotlin.test.*
 class CausalWorldEngineTest {
  @Test fun crisisBecomesRealityOnlyWhenCausesConverge(){
@@ -29,4 +31,31 @@ class CausalWorldEngineTest {
   assertEquals(1,result.hiddenEvents.size)
   assertFalse("daniel" in result.hiddenEvents.first().knownBy)
  }
+ @Test fun discoveryOpportunityMaterializesWithoutLeakingHiddenCause(){
+  val signals=mapOf(
+   "a" to WorldSignal("a","ruins",sense=SignalSense.RADIO,surface="Repeating pulse",hiddenCause="secret beacon",createdTurn=1,salience=80),
+   "b" to WorldSignal("b","ruins",sense=SignalSense.TRACE,surface="Machine marks",hiddenCause="covert team",createdTurn=2,salience=75)
+  )
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to Character("erik","Erik")),discovery=DiscoveryState(signals=signals)
+  ),turn=5)
+  val result=CausalWorldEngine().advance(story)
+  val event=result.publicEvents.single()
+  assertTrue("discovery" in event.tags)
+  assertFalse(event.summary.contains("secret beacon"))
+  assertFalse(event.summary.contains("covert team"))
+ }
+ @Test fun expeditionDangerMaterializesAsPendingRiskNotAutomaticDamage(){
+  val env=EnvironmentState(pressures=mapOf("weather" to WorldPressure("weather",80,1,"Severe storm")))
+  val base=SpatialState(positions=mapOf("erik" to CharacterPosition("erik","settlement")),routes=listOf(Route("settlement","ruins",3)))
+  val travelling=SpatialEngine().startJourney(base,"erik","ruins",4)
+  val story=Story("s","Nadir","p",world=WorldState(
+   characters=mapOf("erik" to Character("erik","Erik")),environment=env,spatial=travelling
+  ),turn=5)
+  val result=CausalWorldEngine().advance(story)
+  assertTrue(result.publicEvents.single().tags.contains("expedition"))
+  assertEquals(1,result.consequences.size)
+  assertFalse(result.consequences.single().resolved)
+ }
+
 }
