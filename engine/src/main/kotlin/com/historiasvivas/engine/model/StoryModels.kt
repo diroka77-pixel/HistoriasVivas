@@ -9,6 +9,7 @@ import com.historiasvivas.engine.spatial.SpatialState
 import com.historiasvivas.engine.discovery.DiscoveryState
 import com.historiasvivas.engine.social.SocialKnowledgeState
 import com.historiasvivas.engine.revelation.RevelationState
+import com.historiasvivas.engine.reasoning.ReasoningState
 
 @Serializable enum class StoryStatus { ACTIVE, ENDING, FINISHED }
 @Serializable enum class FactVisibility { PUBLIC, LIMITED, HIDDEN }
@@ -41,6 +42,7 @@ import com.historiasvivas.engine.revelation.RevelationState
  val discovery:DiscoveryState=DiscoveryState(),
  val socialKnowledge:SocialKnowledgeState=SocialKnowledgeState(),
  val revelations:RevelationState=RevelationState(),
+ val reasoning:ReasoningState=ReasoningState(),
  val worldClock:Long=0
 )
 @Serializable data class Character(val id:String,val name:String,val traits:Set<String> = emptySet(),val goals:List<String> = emptyList(),val knowledge:Set<String> = emptySet(),val mind:CharacterMind=CharacterMind(),val alive:Boolean=true)
