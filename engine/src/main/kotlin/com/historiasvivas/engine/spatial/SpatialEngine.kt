@@ -7,7 +7,8 @@ import kotlinx.serialization.Serializable
  val remainingUnits:Int get()=(totalUnits-elapsedUnits).coerceAtLeast(0)
  val completed:Boolean get()=elapsedUnits>=totalUnits
 }
-@Serializable data class JourneyDiversion(val turn:Long,val abandonedDestination:String,val newDestination:String,val reason:String)\n@Serializable data class SpatialState(
+@Serializable data class JourneyDiversion(val turn:Long,val abandonedDestination:String,val newDestination:String,val reason:String)
+@Serializable data class SpatialState(
  val positions:Map<String,CharacterPosition> = emptyMap(),
  val routes:List<Route> = emptyList(),
  val journeys:Map<String,Journey> = emptyMap()
