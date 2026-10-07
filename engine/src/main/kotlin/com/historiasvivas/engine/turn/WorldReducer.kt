@@ -6,6 +6,7 @@ import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.world.EnvironmentSimulator
 import com.historiasvivas.engine.spatial.SpatialEngine
 import com.historiasvivas.engine.discovery.CausalDiscoveryGenerator
+import com.historiasvivas.engine.discovery.DiscoveryEngine
 
 class WorldReducer(
  private val memoryEngine:MemoryEngine=MemoryEngine(),
@@ -13,7 +14,8 @@ class WorldReducer(
  private val growthEngine:PersonalityGrowthEngine=PersonalityGrowthEngine(),
  private val environmentSimulator:EnvironmentSimulator=EnvironmentSimulator(),
  private val spatialEngine:SpatialEngine=SpatialEngine(),
- private val discoveryGenerator:CausalDiscoveryGenerator=CausalDiscoveryGenerator()
+ private val discoveryGenerator:CausalDiscoveryGenerator=CausalDiscoveryGenerator(),
+ private val discoveryEngine:DiscoveryEngine=DiscoveryEngine()
 ){
  fun apply(story:Story,delta:WorldDelta):Story{
   require(delta.event.turn==story.turn+1){"Event turn must advance exactly one turn"}
@@ -29,8 +31,17 @@ class WorldReducer(
     hiddenCause="journey:"+journey.characterId+":"+journey.from+":"+journey.to,createdTurn=story.turn+1,salience=55,persistent=true
    )
   }).distinctBy{it.id}
-  val newSignals=generatedSignals.filterNot{it.id in story.world.discovery.signals}.associateBy{it.id}
-  val discovery=story.world.discovery.copy(signals=story.world.discovery.signals+newSignals)
+  var discovery=story.world.discovery
+  generatedSignals.forEach{generated->
+   val existing=discovery.signals[generated.id]
+   discovery=when{
+    existing==null -> discovery.copy(signals=discovery.signals+(generated.id to generated))
+    generated.createdTurn>existing.lastChangedTurn &&
+     (generated.surface!=existing.surface || generated.salience!=existing.salience || generated.hiddenCause!=existing.hiddenCause) ->
+      discoveryEngine.reactivate(discovery,generated.id,generated.createdTurn,generated.surface,generated.salience)
+    else -> discovery
+   }
+  }
   val consequences=story.world.pendingConsequences.map{if(it.id in delta.consequencesToResolve)it.copy(resolved=true)else it}+delta.consequencesToSchedule
   val characters=story.world.characters.toMutableMap()
   delta.mindDeltas.forEach{d->characters[d.characterId]?.let{characters[d.characterId]=mindReducer.apply(it,d)}}
