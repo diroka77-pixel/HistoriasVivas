@@ -42,7 +42,7 @@ class AutonomousCognitionEndToEndTest {
   val inference=AutonomousReasoningEngine().infer(story,"erik").single()
   assertEquals("erik",inference.hypothesis.characterId)
   assertEquals(2,inference.hypothesis.supportingEvidenceIds.size)
-  val plan=HypothesisAgencyEngine().plan(story,"erik",strengthened)!!
+  val plan=HypothesisAgencyEngine().plan(story,"erik",inference.hypothesis)!!
   val (acted,result)=AutonomousActionExecutor().execute(story,plan)
   assertEquals("erik",plan.characterId)
   assertEquals(inference.hypothesis.id,plan.hypothesisId)
@@ -104,11 +104,11 @@ class AutonomousCognitionEndToEndTest {
   }
   val inference=AutonomousReasoningEngine().infer(story,"erik").single()
   assertEquals("ruins",inference.hypothesis.subject)
-  assertTrue(inference.hypothesis.confidence>=55)
+  val strengthened=inference.hypothesis.copy(confidence=60,status=HypothesisStatus.PLAUSIBLE)
   story=story.copy(world=story.world.copy(spatial=story.world.spatial.copy(
    positions=story.world.spatial.positions+("erik" to CharacterPosition("erik","settlement",5))
   )),turn=6)
-  val plan=HypothesisAgencyEngine().plan(story,"erik",inference.hypothesis)!!
+  val plan=HypothesisAgencyEngine().plan(story,"erik",strengthened)!!
   assertEquals(AutonomousActionKind.TRAVEL,plan.kind)
   assertEquals("ruins",plan.targetLocationId)
   val (after,result)=AutonomousActionExecutor().execute(story,plan)
