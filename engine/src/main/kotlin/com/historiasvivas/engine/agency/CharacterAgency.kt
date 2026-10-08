@@ -13,9 +13,9 @@ data class AgencyIntent(
 
 class CharacterAgency {
  fun intents(story:Story):List<AgencyIntent> =
-  story.world.characters.values.filter{it.alive}.flatMap{character->buildIntents(character)}.sortedByDescending{it.priority}
+  story.world.characters.values.filter{it.alive}.flatMap{character->buildIntents(character,story.turn)}.sortedByDescending{it.priority}
 
- private fun buildIntents(c:Character):List<AgencyIntent>{
+ private fun buildIntents(c:Character,currentTurn:Long):List<AgencyIntent>{
   val result=mutableListOf<AgencyIntent>()
   val personality=c.mind.personality.dimensions
   val courage=personality["courage"]?:0
@@ -27,7 +27,7 @@ class CharacterAgency {
    result+=AgencyIntent(c.id,AgencyKind.PURSUE_GOAL,goal,priority=(70-i*5).coerceAtLeast(30))
   }
   c.mind.beliefRevisions.asSequence()
-   .filter{it.confirmed!=null&&it.sourceCharacterId!=null}
+   .filter{it.confirmed!=null&&it.sourceCharacterId!=null&&it.turn==currentTurn}
    .groupBy{it.sourceCharacterId!!}
    .mapValues{(_,items)->items.maxBy{it.turn}}
    .forEach{(sourceId,revision)->
