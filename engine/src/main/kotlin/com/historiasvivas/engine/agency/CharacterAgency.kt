@@ -1,4 +1,5 @@
 package com.historiasvivas.engine.agency
+import com.historiasvivas.engine.character.BeliefStatus
 import com.historiasvivas.engine.model.*
 
 enum class AgencyKind { PURSUE_GOAL, PROTECT, CONFRONT, WITHDRAW, INVESTIGATE, RECONNECT }
@@ -21,17 +22,32 @@ class CharacterAgency {
   val caution=personality["caution"]?:0
   val patience=personality["patience"]?:0
   val compassion=personality["compassion"]?:0
+  val secrecy=personality["secrecy"]?:0
   c.goals.forEachIndexed{i,goal->
    result+=AgencyIntent(c.id,AgencyKind.PURSUE_GOAL,goal,priority=(70-i*5).coerceAtLeast(30))
   }
+  c.mind.beliefRevisions.asSequence()
+   .filter{it.confirmed!=null&&it.sourceCharacterId!=null}
+   .groupBy{it.sourceCharacterId!!}
+   .mapValues{(_,items)->items.maxBy{it.turn}}
+   .forEach{(sourceId,revision)->
+    val priority=(60+revision.previous.confidence/5+courage/5+caution/8-patience/8).coerceIn(35,95)
+    val response=when{
+     secrecy>=65->AgencyIntent(c.id,AgencyKind.INVESTIGATE,"Verifies future claims before revealing what was discovered",sourceId,priority)
+     caution>=60&&courage<45->AgencyIntent(c.id,AgencyKind.WITHDRAW,"Keeps distance after discovering a false account",sourceId,priority)
+     courage>=40&&patience<70->AgencyIntent(c.id,AgencyKind.CONFRONT,"Confronts the source of a disproven account",sourceId,priority)
+     else->AgencyIntent(c.id,AgencyKind.INVESTIGATE,"Seeks independent confirmation after being misled",sourceId,priority)
+    }
+    result+=response
+   }
   c.mind.perceptions.values.forEach{perception->
    val danger=perception.impressions["dangerous"]?:0
-   val trust=perception.impressions["trustworthy"]?:0
+   val trust=perception.impressions["trustworthy"]?:perception.impressions["trust"]?:0
    if(danger>=35) result+=AgencyIntent(c.id,AgencyKind.WITHDRAW,"Considers target dangerous",perception.subjectId,(50+danger/2+caution/5-courage/6).coerceIn(20,95))
    if(trust<=-35) result+=AgencyIntent(c.id,AgencyKind.CONFRONT,"No longer trusts target",perception.subjectId,(55+(-trust)/2+courage/6-patience/6).coerceIn(20,95))
    if(trust>=35 || compassion>=65) result+=AgencyIntent(c.id,AgencyKind.RECONNECT,"Values or empathizes with target",perception.subjectId,(45+trust/3+compassion/6).coerceIn(20,90))
   }
-  c.mind.beliefs.filter{it.confidence>=70}.forEach{belief->
+  c.mind.beliefs.filter{it.status!=BeliefStatus.REJECTED&&it.confidence>=70}.forEach{belief->
    if(belief.claim.contains("unknown",true)||belief.claim.contains("mystery",true))
     result+=AgencyIntent(c.id,AgencyKind.INVESTIGATE,"Strong belief: "+belief.claim,priority=60)
   }
