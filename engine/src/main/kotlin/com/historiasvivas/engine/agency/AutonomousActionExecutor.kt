@@ -4,6 +4,7 @@ import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.spatial.SpatialEngine
 import com.historiasvivas.engine.discovery.DiscoveryEngine
 import com.historiasvivas.engine.discovery.InvestigationEngine
+import com.historiasvivas.engine.offscreen.*
 import com.historiasvivas.engine.social.*
 
 @Serializable enum class ActionExecutionStatus { STARTED, BLOCKED, DEFERRED }
@@ -15,6 +16,8 @@ class AutonomousActionExecutor(
  private val spatial:SpatialEngine=SpatialEngine(),
  private val discovery:DiscoveryEngine=DiscoveryEngine(),
  private val investigation:InvestigationEngine=InvestigationEngine(),
+ private val knowledge:KnowledgeGate=KnowledgeGate(),
+ private val evidenceBeliefs:EvidenceBeliefReconciliationEngine=EvidenceBeliefReconciliationEngine(),
  private val disclosure:DisclosureEngine=DisclosureEngine(),
  private val social:SocialInformationEngine=SocialInformationEngine()
 ){
@@ -42,8 +45,32 @@ class AutonomousActionExecutor(
      plan.id+"-investigation",story.turn,c.name+" investigates an observable anomaly",
      setOf(c.id),setOf("autonomous","investigation")
     )
-    story.copy(world=story.world.copy(discovery=outcome.state)) to
-     AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Observable signal investigated",event)
+    val hidden=signal.relatedEventId?.let{eventId->
+     story.world.hiddenEvents.firstOrNull{it.id==eventId}
+    }
+    val hiddenEvents=hidden?.let{
+     knowledge.discover(
+      story.world.hiddenEvents,
+      Discovery(
+       it.id,c.id,DiscoveryChannel.INVESTIGATION,
+       outcome.interpretation.hypothesis,outcome.evidence.id
+      ),
+      DiscoverySources(evidence=outcome.state.evidence)
+     )
+    }?:story.world.hiddenEvents
+    val investigator=hidden?.let{
+     c.copy(mind=evidenceBeliefs.integrate(
+      c.mind,it.id,outcome.evidence,outcome.interpretation,
+      story.world.socialKnowledge.testimonies,story.turn
+     ))
+    }?:c
+    story.copy(world=story.world.copy(
+     characters=story.world.characters+(c.id to investigator),
+     discovery=outcome.state,
+     hiddenEvents=hiddenEvents
+    )) to AutonomousActionResult(
+     plan.id,ActionExecutionStatus.STARTED,"Observable signal investigated",event
+    )
    }
    AutonomousActionKind.WITHDRAW->{
     val from=spatial.locationOf(story.world.spatial,plan.characterId)
