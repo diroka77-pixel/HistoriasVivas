@@ -14,11 +14,16 @@ class DisclosureEngine {
   val speaker=story.world.characters[speakerId]?:return null
   if(!speaker.alive||hypothesis.characterId!=speakerId)return null
   val relation=story.world.relationships.firstOrNull{it.fromCharacterId==speakerId&&it.toCharacterId==listenerId}
-  val trust=relation?.trust?:speaker.mind.perceptions[listenerId]?.impressions?.get("trust")?:0
+  val rememberedFalseAccounts=speaker.mind.beliefRevisions.count{
+   it.sourceCharacterId==listenerId&&it.confirmed!=null
+  }
+  val deceptionPenalty=(rememberedFalseAccounts*35).coerceAtMost(70)
+  val rawTrust=relation?.trust?:speaker.mind.perceptions[listenerId]?.impressions?.get("trust")?:0
+  val trust=(rawTrust-deceptionPenalty).coerceIn(-100,100)
   val fear=relation?.fear?:0
   val p=speaker.mind.personality.dimensions
   val honesty=p["honesty"]?:0; val caution=p["caution"]?:0; val loyalty=p["loyalty"]?:0
-  val disclosure=trust+loyalty/3+honesty/3-caution/3-fear/2
+  val disclosure=trust+loyalty/3+honesty/3-caution/3-fear/2-deceptionPenalty
   val kind=when{
    fear>=65&&honesty<20->DisclosureKind.LIE
    disclosure>=55->DisclosureKind.TELL
@@ -34,7 +39,7 @@ class DisclosureEngine {
    else->null
   }
   return DisclosureDecision("disclosure-"+speakerId+"-"+listenerId+"-"+hypothesis.id+"-"+story.turn,speakerId,listenerId,hypothesis.id,kind,story.turn,
-   "trust=$trust fear=$fear honesty=$honesty caution=$caution loyalty=$loyalty",claim)
+   "trust=$trust fear=$fear honesty=$honesty caution=$caution loyalty=$loyalty rememberedFalseAccounts=$rememberedFalseAccounts",claim)
  }
  fun toTestimony(decision:DisclosureDecision,hypothesis:Hypothesis):Testimony?{
   val claim=decision.revealedClaim?:return null
