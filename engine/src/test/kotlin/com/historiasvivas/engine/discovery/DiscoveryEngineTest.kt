@@ -10,6 +10,36 @@ class DiscoveryEngineTest {
   val noticed=engine.notice(state,"tracks","daniel")
   assertEquals(SignalStatus.NOTICED,noticed.signals["tracks"]!!.statusFor("daniel"))
  }
+ @Test fun globalSignalIsVisibleFromStableLocationsAndJourneys(){
+  val global=WorldSignal(
+   "weather",null,sense=SignalSense.ENVIRONMENT,
+   surface="A persistent haze covers the region",createdTurn=4,salience=70
+  )
+  val state=DiscoveryState(mapOf(global.id to global))
+  val engine=DiscoveryEngine()
+
+  assertEquals(listOf(global.id),engine.visibleAt(state,"daniel","settlement").map{it.id})
+  assertEquals(
+   listOf(global.id),
+   engine.visibleOnJourney(state,"daniel","settlement","ruins").map{it.id}
+  )
+ }
+ @Test fun missingLocationDoesNotExposeUnrelatedRouteSignals(){
+  val route=WorldSignal(
+   "tracks",null,routeFrom="forest",routeTo="ruins",sense=SignalSense.TRACE,
+   surface="Fresh tracks",createdTurn=4,salience=80
+  )
+  val state=DiscoveryState(mapOf(route.id to route))
+  val engine=DiscoveryEngine()
+
+  assertTrue(engine.visibleAt(state,"daniel",null).isEmpty())
+  assertTrue(engine.visibleAt(state,"daniel","settlement").isEmpty())
+  assertEquals(
+   listOf(route.id),
+   engine.visibleOnJourney(state,"daniel","forest","ruins").map{it.id}
+  )
+ }
+
  @Test fun ignoredSignalPersistsAndCanStillExistForSomeoneElse(){
   val signal=WorldSignal("radio","settlement",sense=SignalSense.RADIO,surface="A weak repeating pulse",hiddenCause="Old beacon",createdTurn=8)
   val engine=DiscoveryEngine(); val ignored=engine.ignore(DiscoveryState(mapOf("radio" to signal)),"radio","daniel")
