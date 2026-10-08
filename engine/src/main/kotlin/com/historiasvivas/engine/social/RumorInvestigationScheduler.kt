@@ -24,6 +24,7 @@ class RumorInvestigationScheduler(
  private val discovery:DiscoveryEngine=DiscoveryEngine(),
  private val investigation:InvestigationEngine=InvestigationEngine(),
  private val knowledge:KnowledgeGate=KnowledgeGate(),
+ private val beliefs:EvidenceBeliefReconciliationEngine=EvidenceBeliefReconciliationEngine(),
  private val spatial:SpatialEngine=SpatialEngine()
 ){
  fun run(
@@ -65,7 +66,12 @@ class RumorInvestigationScheduler(
      ),
      DiscoverySources(evidence=result.state.evidence)
     )
+    val updatedMind=beliefs.integrate(
+     character.mind,eventId,result.evidence,result.interpretation,
+     current.world.socialKnowledge.testimonies,current.turn
+    )
     current=current.copy(world=current.world.copy(
+     characters=current.world.characters+(character.id to character.copy(mind=updatedMind)),
      discovery=result.state,
      hiddenEvents=events
     ))
