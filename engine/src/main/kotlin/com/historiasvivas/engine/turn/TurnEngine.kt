@@ -7,6 +7,7 @@ import com.historiasvivas.engine.offscreen.OffscreenSimulator
 import com.historiasvivas.engine.director.*
 import com.historiasvivas.engine.agency.AutonomousTurnScheduler
 import com.historiasvivas.engine.spatial.SpatialEngine
+import com.historiasvivas.engine.social.RelationshipRepairScheduler
 
 class TurnEngine(
  private val ai:NarrativeAI,
@@ -18,6 +19,7 @@ class TurnEngine(
  private val pacing:EmergentPacingDirector=EmergentPacingDirector(),
  private val latentDirector:LatentEventDirector=LatentEventDirector(),
  private val autonomousScheduler:AutonomousTurnScheduler=AutonomousTurnScheduler(),
+ private val repairScheduler:RelationshipRepairScheduler=RelationshipRepairScheduler(),
  private val spatial:SpatialEngine=SpatialEngine()
 ){
  suspend fun play(story:Story,userAction:String):TurnResult{
@@ -52,11 +54,12 @@ class TurnEngine(
   require(validation.accepted){"AI proposed an inconsistent world delta: "+validation.issues.joinToString{it.code}}
   val reduced=reducer.apply(story,delta)
   val (autonomousStory,_)=autonomousScheduler.run(reduced,present,maxCharacters=1)
-  val updatedDirector=autonomousStory.director.copy(
-   lastEmergentTurn=causal.emergentTurn?:autonomousStory.director.lastEmergentTurn,
-   latentEmergentEventIds=(autonomousStory.director.latentEmergentEventIds+latentIds)-consumedLatentIds,
-   latentEmergentEvents=(autonomousStory.director.latentEmergentEvents+latentPublic)-consumedLatentIds
+  val (repairedStory,_)=repairScheduler.run(autonomousStory,present,maxAttempts=1)
+  val updatedDirector=repairedStory.director.copy(
+   lastEmergentTurn=causal.emergentTurn?:repairedStory.director.lastEmergentTurn,
+   latentEmergentEventIds=(repairedStory.director.latentEmergentEventIds+latentIds)-consumedLatentIds,
+   latentEmergentEvents=(repairedStory.director.latentEmergentEvents+latentPublic)-consumedLatentIds
   )
-  return TurnResult(autonomousStory.copy(director=updatedDirector),response.prose,delta)
+  return TurnResult(repairedStory.copy(director=updatedDirector),response.prose,delta)
  }
 }
