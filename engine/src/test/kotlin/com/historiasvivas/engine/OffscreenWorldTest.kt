@@ -152,7 +152,9 @@ class OffscreenWorldTest {
   assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
  }
  @Test fun witnessedEventCanBeKnownWithoutIndirectSource(){
-  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val event=HiddenEvent(
+   "h1",5,"erik","Erik entered the ruins",knownBy=setOf("erik","daniel")
+  )
   val gate=KnowledgeGate()
   val updated=gate.discover(
    listOf(event),
