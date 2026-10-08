@@ -57,11 +57,12 @@ class KnowledgeGate {
   return when(discovery.channel){
    DiscoveryChannel.WITNESSED->
     sourceId.isNullOrBlank()&&discovery.characterId in event.knownBy
-   DiscoveryChannel.TOLD->sourceId?.let{sources.testimonies[it]}?.let{
-    it.channel!=InformationChannel.RUMOR &&
-     it.intent==TestimonyIntent.HONEST &&
-     it.relatedEventId==event.id &&
-     wasReceived(it,discovery,sources)
+   DiscoveryChannel.TOLD->sourceId?.let{sources.testimonies[it]}?.let{testimony->
+    testimony.channel!=InformationChannel.RUMOR &&
+     testimony.intent==TestimonyIntent.HONEST &&
+     testimony.relatedEventId==event.id &&
+     (testimony.speakerId in event.knownBy||testimony.speakerId in event.discoveredBy) &&
+     wasReceived(testimony,discovery,sources)
    }?:false
    DiscoveryChannel.RUMOR->false
    DiscoveryChannel.EVIDENCE,DiscoveryChannel.INVESTIGATION->sourceId?.let{sources.evidence[it]}?.let{
@@ -73,6 +74,11 @@ class KnowledgeGate {
   sources.heardClaims.values.any{
    it.testimonyId==testimony.id &&
     it.listenerId==discovery.characterId &&
+    it.speakerId==testimony.speakerId &&
+    it.claim==testimony.claim &&
+    it.channel==testimony.channel &&
+    it.turn==testimony.turn &&
+    (it.subject==null||it.subject==testimony.subject) &&
     it.relatedEventId==discovery.eventId
   }
 }

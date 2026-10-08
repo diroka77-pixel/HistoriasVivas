@@ -36,6 +36,15 @@ class ProvenancePipelineTest {
    second.state.evidence.values.toList(),emptyList(),10
   )!!
   assertEquals(hidden.id,hypothesis.relatedEventId)
+  val learnedEvents=KnowledgeGate().discover(
+   listOf(hidden),
+   Discovery(
+    hidden.id,"elena",DiscoveryChannel.INVESTIGATION,
+    second.interpretation.hypothesis,second.evidence.id
+   ),
+   DiscoverySources(evidence=second.state.evidence)
+  )
+  assertEquals(listOf(hidden.id),KnowledgeGate().visible(learnedEvents,"elena").map{it.id})
 
   val elena=Character("elena","Elena",mind=CharacterMind(personality=PersonalityProfile(mapOf("honesty" to 70,"loyalty" to 60))))
   val daniel=Character("daniel","Daniel")
@@ -55,7 +64,7 @@ class ProvenancePipelineTest {
   val heard=social.hear(testimony,"daniel",daniel.mind)
   assertEquals(hidden.id,heard.relatedEventId)
   val directlyDiscovered=KnowledgeGate().discover(
-   listOf(hidden),
+   learnedEvents,
    Discovery(hidden.id,"daniel",DiscoveryChannel.TOLD,"Elena tells Daniel what she found",sourceId=testimony.id),
    DiscoverySources(
     testimonies=mapOf(testimony.id to testimony),
