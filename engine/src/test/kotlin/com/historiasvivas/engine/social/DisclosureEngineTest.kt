@@ -23,4 +23,26 @@ class DisclosureEngineTest {
   assertEquals(h.claim,testimony.privateTruth)
   assertNotEquals(h.claim,testimony.claim)
  }
+ @Test fun rememberedDeceptionMakesSpeakerGuardFutureInformation(){
+  val personality=PersonalityProfile(mapOf("honesty" to 60,"loyalty" to 50))
+  val clean=Character("erik","Erik",mind=CharacterMind(personality=personality))
+  val relation=Relationship("erik","daniel",trust=45)
+  val openDecision=DisclosureEngine().decide(story(clean,relation),"erik","daniel",h)!!
+  assertEquals(DisclosureKind.TELL,openDecision.kind)
+
+  val revision=BeliefRevision(
+   id="r1",
+   previous=Belief("daniel:t1","The ruins are empty",70,"t1"),
+   revised=Belief("daniel:t1","The ruins are empty",0,"t1",status=BeliefStatus.REJECTED),
+   confirmed=Belief("daniel:t1","A transmitter is active",90,"e1"),
+   evidenceId="e1",
+   sourceCharacterId="daniel",
+   turn=19
+  )
+  val guarded=clean.copy(mind=clean.mind.copy(beliefRevisions=listOf(revision)))
+  val guardedDecision=DisclosureEngine().decide(story(guarded,relation),"erik","daniel",h)!!
+  assertEquals(DisclosureKind.DELAY,guardedDecision.kind)
+  assertTrue(guardedDecision.motivation.contains("rememberedFalseAccounts=1"))
+  assertNull(DisclosureEngine().toTestimony(guardedDecision,h))
+ }
 }
