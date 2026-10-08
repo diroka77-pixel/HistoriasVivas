@@ -78,7 +78,9 @@ class OffscreenWorldTest {
   assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
  }
  @Test fun honestReceivedTestimonyCanRevealLinkedTruth(){
-  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val event=HiddenEvent(
+   "h1",5,"erik","Erik entered the ruins",knownBy=setOf("erik","elena")
+  )
   val testimony=Testimony(
    id="t-honest",speakerId="elena",claim=event.summary,subject="erik",turn=6,
    channel=InformationChannel.DIRECT_TESTIMONY,intent=TestimonyIntent.HONEST,relatedEventId=event.id
@@ -94,6 +96,49 @@ class OffscreenWorldTest {
   )
   assertEquals(listOf(event.id),KnowledgeGate().visible(updated,"daniel").map{it.id})
  }
+ @Test fun uninformedSpeakerCannotRevealLinkedTruthWithAnHonestLabel(){
+  val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
+  val testimony=Testimony(
+   id="t-uninformed",speakerId="elena",claim=event.summary,subject="erik",turn=6,
+   channel=InformationChannel.DIRECT_TESTIMONY,intent=TestimonyIntent.HONEST,
+   relatedEventId=event.id
+  )
+  val heard=SocialInformationEngine().hear(testimony,"daniel",CharacterMind())
+  val updated=KnowledgeGate().discover(
+   listOf(event),
+   Discovery(event.id,"daniel",DiscoveryChannel.TOLD,"Elena tells Daniel",testimony.id),
+   DiscoverySources(
+    testimonies=mapOf(testimony.id to testimony),
+    heardClaims=mapOf(testimony.id+":daniel" to heard)
+   )
+  )
+
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
+ }
+ @Test fun tamperedReceiptCannotGroundAnOtherwiseValidTestimony(){
+  val event=HiddenEvent(
+   "h1",5,"erik","Erik entered the ruins",knownBy=setOf("erik","elena")
+  )
+  val testimony=Testimony(
+   id="t-valid",speakerId="elena",claim=event.summary,subject="erik",turn=6,
+   relatedEventId=event.id
+  )
+  val tampered=HeardClaim(
+   testimony.id,"daniel","nora",testimony.claim,55,testimony.turn,
+   testimony.channel,event.id,subject=testimony.subject
+  )
+  val updated=KnowledgeGate().discover(
+   listOf(event),
+   Discovery(event.id,"daniel",DiscoveryChannel.TOLD,"Nora allegedly told Daniel",testimony.id),
+   DiscoverySources(
+    testimonies=mapOf(testimony.id to testimony),
+    heardClaims=mapOf(testimony.id+":daniel" to tampered)
+   )
+  )
+
+  assertTrue(KnowledgeGate().visible(updated,"daniel").isEmpty())
+ }
+
  @Test fun liesAndPartialAccountsCreateBeliefsWithoutRevealingTruth(){
   val event=HiddenEvent("h1",5,"erik","Erik entered the ruins")
   val social=SocialInformationEngine()
