@@ -68,4 +68,39 @@ class DisclosureEngineTest {
   assertEquals(DisclosureKind.DELAY,DisclosureEngine().decide(guarded,"erik","daniel",h)!!.kind)
   assertEquals(DisclosureKind.TELL,DisclosureEngine().decide(recovered,"erik","daniel",h)!!.kind)
  }
+ @Test fun acceptedRepairSoftensButDoesNotEraseDisclosureGuard(){
+  val revision=BeliefRevision(
+   id="repairable-r",
+   previous=Belief("daniel:t1","The ruins are empty",70,"t1"),
+   revised=Belief("daniel:t1","The ruins are empty",0,"t1",status=BeliefStatus.REJECTED),
+   confirmed=Belief("daniel:t1","A transmitter is active",90,"e1"),
+   evidenceId="e1",
+   sourceCharacterId="daniel",
+   turn=20
+  )
+  val erik=Character(
+   "erik","Erik",
+   mind=CharacterMind(
+    personality=PersonalityProfile(mapOf("honesty" to 60,"loyalty" to 50)),
+    beliefRevisions=listOf(revision)
+   )
+  )
+  val damaged=story(erik,Relationship("erik","daniel",trust=45)).copy(turn=20)
+  val before=DisclosureEngine().decide(damaged,"erik","daniel",h)!!
+  assertEquals(DisclosureKind.DELAY,before.kind)
+
+  val repaired=RelationshipRepairEngine().apply(
+   damaged,
+   RelationshipRepairAttempt(
+    id="repair",offenderId="daniel",harmedId="erik",beliefRevisionId=revision.id,
+    acts=setOf(RepairAct.ADMISSION,RepairAct.APOLOGY,RepairAct.RESTITUTION),
+    sincerity=90,turn=20
+   )
+  )!!
+  assertTrue(repaired.outcome.accepted)
+  val after=DisclosureEngine().decide(repaired.story,"erik","daniel",h)!!
+  assertEquals(DisclosureKind.PARTIAL,after.kind)
+  assertTrue(after.motivation.contains("repairRelief="))
+  assertNotEquals(DisclosureKind.TELL,after.kind)
+ }
 }
