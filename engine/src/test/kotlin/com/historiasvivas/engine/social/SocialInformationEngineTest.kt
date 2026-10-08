@@ -38,4 +38,100 @@ class SocialInformationEngineTest {
   assertNull(cToD.privateTruth)
  }
 
+ @Test fun honestDirectTestimonySupersedesMatchingRumorWithoutErasingHistory(){
+  val engine=SocialInformationEngine()
+  val rumor=Testimony(
+   "rumor-1","elena","Erik repaired the relationship","erik",4,
+   channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN,
+   reliability=50,relatedEventId="hidden-repair"
+  )
+  val direct=Testimony(
+   "direct-1","erik","Erik repaired the relationship","erik",6,
+   channel=InformationChannel.DIRECT_TESTIMONY,intent=TestimonyIntent.HONEST,
+   reliability=80,relatedEventId="hidden-repair"
+  )
+  val sources=mapOf(rumor.id to rumor,direct.id to direct)
+  val afterRumor=engine.integrateBelief(
+   CharacterMind(),engine.hear(rumor,"daniel",CharacterMind()),sources,4
+  )
+  val finalMind=engine.integrateBelief(
+   afterRumor,engine.hear(direct,"daniel",afterRumor),sources,6
+  )
+
+  val oldBelief=finalMind.beliefs.single{it.sourceEventId==rumor.id}
+  val confirmed=finalMind.beliefs.single{it.sourceEventId==direct.id}
+  assertEquals(BeliefStatus.DOUBTED,oldBelief.status)
+  assertEquals(direct.id,oldBelief.supersededBySourceId)
+  assertEquals(6,oldBelief.lastRevisedTurn)
+  val revision=finalMind.beliefRevisions.single()
+  assertEquals(rumor.id,revision.previous.sourceEventId)
+  assertEquals(oldBelief,revision.revised)
+  assertEquals(confirmed,revision.confirmed)
+  assertEquals("erik",revision.sourceCharacterId)
+ }
+ @Test fun conflictingDirectAccountContestsRatherThanSilentlyDeletingRumor(){
+  val engine=SocialInformationEngine()
+  val rumor=Testimony(
+   "rumor-conflict","elena","The apology was accepted","erik",4,
+   channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN,
+   relatedEventId="hidden-repair"
+  )
+  val direct=Testimony(
+   "direct-conflict","erik","The apology was rejected","erik",6,
+   channel=InformationChannel.DIRECT_TESTIMONY,intent=TestimonyIntent.HONEST,
+   relatedEventId="hidden-repair"
+  )
+  val sources=mapOf(rumor.id to rumor,direct.id to direct)
+  val rumorMind=engine.integrateBelief(
+   CharacterMind(),engine.hear(rumor,"daniel",CharacterMind()),sources,4
+  )
+  val corrected=engine.integrateBelief(
+   rumorMind,engine.hear(direct,"daniel",rumorMind),sources,6
+  )
+
+  assertEquals(
+   BeliefStatus.CONTESTED,
+   corrected.beliefs.single{it.sourceEventId==rumor.id}.status
+  )
+  assertEquals(1,corrected.beliefRevisions.size)
+  assertEquals(2,corrected.beliefs.size)
+ }
+ @Test fun dishonestOrRumoredFollowUpCannotSupersedePriorBelief(){
+  val engine=SocialInformationEngine()
+  val first=Testimony(
+   "rumor-base","elena","A repair happened","erik",4,
+   channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN,
+   relatedEventId="hidden-repair"
+  )
+  val lie=Testimony(
+   "lie-follow-up","erik","Everything is resolved","erik",6,
+   channel=InformationChannel.DIRECT_TESTIMONY,intent=TestimonyIntent.LYING,
+   relatedEventId="hidden-repair"
+  )
+  val sources=mapOf(first.id to first,lie.id to lie)
+  val firstMind=engine.integrateBelief(
+   CharacterMind(),engine.hear(first,"daniel",CharacterMind()),sources,4
+  )
+  val afterLie=engine.integrateBelief(
+   firstMind,engine.hear(lie,"daniel",firstMind),sources,6
+  )
+
+  assertEquals(BeliefStatus.ACTIVE,afterLie.beliefs.single{it.sourceEventId==first.id}.status)
+  assertTrue(afterLie.beliefRevisions.isEmpty())
+  assertEquals(2,afterLie.beliefs.size)
+ }
+ @Test fun integratingTheSameSourceTwiceIsIdempotent(){
+  val engine=SocialInformationEngine()
+  val direct=Testimony(
+   "direct-once","erik","A repair happened","erik",6,
+   relatedEventId="hidden-repair"
+  )
+  val heard=engine.hear(direct,"daniel",CharacterMind())
+  val once=engine.integrateBelief(CharacterMind(),heard,mapOf(direct.id to direct),6)
+  val twice=engine.integrateBelief(once,heard,mapOf(direct.id to direct),7)
+
+  assertEquals(once,twice)
+  assertEquals(1,twice.beliefs.size)
+ }
+
 }
