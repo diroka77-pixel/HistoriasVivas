@@ -27,6 +27,27 @@ class ContinuityValidator(private val maxPersonalityShiftPerTurn:Int=15) {
    issues+=ValidationIssue("PERSONALITY_JUMP","Personality changes must accumulate gradually")
   if(delta.perceptionDeltas.any{d->d.impressionShifts.values.any{kotlin.math.abs(it)>25}})
    issues+=ValidationIssue("PERCEPTION_JUMP","A single event cannot rewrite an entire relationship")
+
+  val hidden=delta.hiddenEventsToAdd
+  val hiddenUnknown=hidden.flatMap{
+   setOf(it.actorId)+it.knownBy+it.discoveredBy
+  }.toSet()-known
+  if(hiddenUnknown.isNotEmpty())
+   issues+=ValidationIssue("UNKNOWN_HIDDEN_CHARACTER","Hidden events reference unknown characters: "+hiddenUnknown.sorted().joinToString())
+  if(hidden.any{it.turn!=story.turn+1})
+   issues+=ValidationIssue("INVALID_HIDDEN_TURN","Hidden events must occur on the advancing turn")
+  if(hidden.any{it.actorId !in it.knownBy})
+   issues+=ValidationIssue("HIDDEN_ACTOR_UNAWARE","A hidden event actor must know their own event")
+  val duplicateHidden=hidden.groupBy{it.id}.filterValues{it.size>1}.keys
+  if(duplicateHidden.isNotEmpty())
+   issues+=ValidationIssue("DUPLICATE_HIDDEN_EVENT","Duplicate hidden event ids: "+duplicateHidden.sorted().joinToString())
+  val existingHidden=story.world.hiddenEvents.map{it.id}.toSet()
+  val collidingHidden=hidden.map{it.id}.filter{it in existingHidden}.toSet()
+  if(collidingHidden.isNotEmpty())
+   issues+=ValidationIssue("EXISTING_HIDDEN_EVENT","Hidden event ids already exist: "+collidingHidden.sorted().joinToString())
+  if(hidden.any{it.id.isBlank()||it.summary.isBlank()})
+   issues+=ValidationIssue("INVALID_HIDDEN_CONTENT","Hidden events require a non-blank id and summary")
+
   return ValidationResult(issues.isEmpty(),issues)
  }
 }
