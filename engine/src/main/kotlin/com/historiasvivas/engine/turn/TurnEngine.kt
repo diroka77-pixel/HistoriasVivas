@@ -10,6 +10,7 @@ import com.historiasvivas.engine.spatial.SpatialEngine
 import com.historiasvivas.engine.social.RelationshipRepairConsequenceEngine
 import com.historiasvivas.engine.social.RelationshipRepairDisclosureScheduler
 import com.historiasvivas.engine.social.RelationshipRepairScheduler
+import com.historiasvivas.engine.social.RumorInvestigationScheduler
 import com.historiasvivas.engine.social.RumorPropagationScheduler
 
 class TurnEngine(
@@ -25,6 +26,7 @@ class TurnEngine(
  private val repairConsequences:RelationshipRepairConsequenceEngine=RelationshipRepairConsequenceEngine(),
  private val repairDisclosures:RelationshipRepairDisclosureScheduler=RelationshipRepairDisclosureScheduler(),
  private val rumorPropagation:RumorPropagationScheduler=RumorPropagationScheduler(),
+ private val rumorInvestigations:RumorInvestigationScheduler=RumorInvestigationScheduler(),
  private val repairScheduler:RelationshipRepairScheduler=RelationshipRepairScheduler(),
  private val spatial:SpatialEngine=SpatialEngine()
 ){
@@ -62,7 +64,10 @@ class TurnEngine(
   val (consequentialStory,_)=repairConsequences.resolve(reduced,maxConsequences=2)
   val (disclosedStory,_)=repairDisclosures.run(consequentialStory,maxDisclosures=1)
   val (socialStory,_)=rumorPropagation.run(disclosedStory,maxRelays=1)
-  val (autonomousStory,_)=autonomousScheduler.run(socialStory,present,maxCharacters=1)
+  val (investigatedStory,_)=rumorInvestigations.run(
+   socialStory,excludedCharacterIds=present,maxInvestigations=1
+  )
+  val (autonomousStory,_)=autonomousScheduler.run(investigatedStory,present,maxCharacters=1)
   val (repairedStory,_)=repairScheduler.run(autonomousStory,present,maxAttempts=1)
   val updatedDirector=repairedStory.director.copy(
    lastEmergentTurn=causal.emergentTurn?:repairedStory.director.lastEmergentTurn,
