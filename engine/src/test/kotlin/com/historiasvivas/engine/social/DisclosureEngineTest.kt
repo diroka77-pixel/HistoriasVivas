@@ -45,4 +45,27 @@ class DisclosureEngineTest {
   assertTrue(guardedDecision.motivation.contains("rememberedFalseAccounts=1"))
   assertNull(DisclosureEngine().toTestimony(guardedDecision,h))
  }
+ @Test fun disclosureGuardDecaysWhenNoNewDeceptionOccurs(){
+  val revision=BeliefRevision(
+   id="decay-r",
+   previous=Belief("daniel:t1","The ruins are empty",70,"t1"),
+   revised=Belief("daniel:t1","The ruins are empty",0,"t1",status=BeliefStatus.REJECTED),
+   confirmed=Belief("daniel:t1","A transmitter is active",90,"e1"),
+   evidenceId="e1",
+   sourceCharacterId="daniel",
+   turn=20
+  )
+  val erik=Character(
+   "erik","Erik",
+   mind=CharacterMind(
+    personality=PersonalityProfile(mapOf("honesty" to 60,"loyalty" to 50)),
+    beliefRevisions=listOf(revision)
+   )
+  )
+  val relation=Relationship("erik","daniel",trust=45)
+  val guarded=story(erik,relation).copy(turn=20)
+  val recovered=story(erik,relation).copy(turn=35)
+  assertEquals(DisclosureKind.DELAY,DisclosureEngine().decide(guarded,"erik","daniel",h)!!.kind)
+  assertEquals(DisclosureKind.TELL,DisclosureEngine().decide(recovered,"erik","daniel",h)!!.kind)
+ }
 }
