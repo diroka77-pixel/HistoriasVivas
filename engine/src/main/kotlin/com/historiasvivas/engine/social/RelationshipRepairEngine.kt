@@ -60,8 +60,12 @@ class RelationshipRepairEngine(
   val repairEffort=(if(admission)15 else 0)+(if(apology)10 else 0)+(if(restitution)25 else 0)
   val score=repairEffort+sincerity/5+compassion/6+patience/8-caution/8-harmSeverity
   val accepted=admission&&sincerity>=40&&score>=20
+  val priorRepairTrust=story.world.socialKnowledge.relationshipRepairs.values
+   .filter{it.accepted&&it.beliefRevisionId==attempt.beliefRevisionId}
+   .sumOf{it.trustChange.coerceAtLeast(0)}
+  val remainingRepairCapacity=(25-priorRepairTrust).coerceAtLeast(0)
   val trustChange=when{
-   accepted->(score/4).coerceIn(3,25)
+   accepted->(score/4).coerceIn(3,25).coerceAtMost(remainingRepairCapacity)
    apology&&!admission->-5
    else->0
   }
