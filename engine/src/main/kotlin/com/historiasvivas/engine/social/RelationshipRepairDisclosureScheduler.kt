@@ -63,8 +63,11 @@ class RelationshipRepairDisclosureScheduler(
     val listener=listeners.firstOrNull()?:return@forEach
     val disclosed=disclosure.disclose(current,outcome.attemptId,speaker.id,current.turn)?:return@forEach
     val heard=social.hear(disclosed.testimony,listener.id,listener.mind)
-    val updatedListener=listener.copy(mind=listener.mind.copy(
-     beliefs=listener.mind.beliefs+social.asBelief(heard)
+    val updatedListener=listener.copy(mind=social.integrateBelief(
+     listener.mind,
+     heard,
+     disclosed.story.world.socialKnowledge.testimonies,
+     current.turn
     ))
     val socialKnowledge=disclosed.story.world.socialKnowledge.copy(
      heardClaims=disclosed.story.world.socialKnowledge.heardClaims+

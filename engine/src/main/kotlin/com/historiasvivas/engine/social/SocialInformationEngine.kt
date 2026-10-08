@@ -30,4 +30,53 @@ class SocialInformationEngine {
  fun asBelief(heard:HeardClaim)=Belief(
   subject=heard.speakerId+":"+heard.testimonyId,claim=heard.claim,confidence=heard.confidence,sourceEventId=heard.testimonyId
  )
+ fun integrateBelief(
+  mind:CharacterMind,
+  heard:HeardClaim,
+  testimonies:Map<String,Testimony>,
+  turn:Long=heard.turn
+ ):CharacterMind{
+  if(mind.beliefs.any{it.sourceEventId==heard.testimonyId})return mind
+  val belief=asBelief(heard)
+  val source=testimonies[heard.testimonyId]
+  val eventId=heard.relatedEventId
+  val isGroundedDirect=source!=null&&
+   source.channel!=InformationChannel.RUMOR&&
+   source.intent==TestimonyIntent.HONEST&&
+   eventId!=null
+  if(!isGroundedDirect)return mind.copy(beliefs=mind.beliefs+belief)
+
+  val superseded=mind.beliefs.filter{prior->
+   prior.status!=BeliefStatus.REJECTED&&
+    prior.sourceEventId?.let{testimonies[it]}?.let{
+     it.channel==InformationChannel.RUMOR&&it.relatedEventId==eventId
+    }==true
+  }
+  if(superseded.isEmpty())return mind.copy(beliefs=mind.beliefs+belief)
+  val supersededIds=superseded.mapNotNull{it.sourceEventId}.toSet()
+  val revisedBeliefs=mind.beliefs.map{prior->
+   if(prior.sourceEventId !in supersededIds)prior else prior.copy(
+    status=if(prior.claim==belief.claim)BeliefStatus.DOUBTED else BeliefStatus.CONTESTED,
+    lastRevisedTurn=turn,
+    supersededBySourceId=heard.testimonyId
+   )
+  }
+  val existingRevisionIds=mind.beliefRevisions.map{it.id}.toSet()
+  val revisions=superseded.map{prior->
+   val revised=revisedBeliefs.first{it.sourceEventId==prior.sourceEventId}
+   BeliefRevision(
+    id="social-revision-"+prior.sourceEventId+"-"+heard.testimonyId+"-"+turn,
+    previous=prior,
+    revised=revised,
+    confirmed=belief,
+    evidenceId=heard.testimonyId,
+    sourceCharacterId=heard.speakerId,
+    turn=turn
+   )
+  }.filter{it.id !in existingRevisionIds}
+  return mind.copy(
+   beliefs=revisedBeliefs+belief,
+   beliefRevisions=mind.beliefRevisions+revisions
+  )
+ }
 }

@@ -55,11 +55,12 @@ class RumorPropagationScheduler(
 
     val testimony=rumors.relay(original,speaker.id,listener.id,current.turn)
     val heard=social.hear(testimony,listener.id,listener.mind)
-    val updatedListener=listener.copy(mind=listener.mind.copy(
-     beliefs=listener.mind.beliefs+social.asBelief(heard)
+    val testimonies=current.world.socialKnowledge.testimonies+(testimony.id to testimony)
+    val updatedListener=listener.copy(mind=social.integrateBelief(
+     listener.mind,heard,testimonies,current.turn
     ))
     val knowledge=current.world.socialKnowledge.copy(
-     testimonies=current.world.socialKnowledge.testimonies+(testimony.id to testimony),
+     testimonies=testimonies,
      heardClaims=current.world.socialKnowledge.heardClaims+
       (testimony.id+":"+listener.id to heard)
     )
