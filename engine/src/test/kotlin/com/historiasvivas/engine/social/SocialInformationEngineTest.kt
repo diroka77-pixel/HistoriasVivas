@@ -26,7 +26,10 @@ class SocialInformationEngineTest {
    "b" to Perception("listener","b",impressions=mapOf("trust" to 90)),
    "c" to Perception("listener","c",impressions=mapOf("trust" to 90))
   ))
-  val first=HeardClaim("source","b","a","There is something beneath the ruins",70,1,InformationChannel.DIRECT_TESTIMONY)
+  val first=HeardClaim(
+   "source","b","a","There is something beneath the ruins",70,1,
+   InformationChannel.DIRECT_TESTIMONY,subject="ruins"
+  )
   val bToC=rumor.relay(first,"b","c",2)
   val heardByC=engine.hear(bToC,"c",trustingMind)
   assertTrue(heardByC.confidence<=55)
@@ -34,8 +37,30 @@ class SocialInformationEngineTest {
   val heardByD=engine.hear(cToD,"d",trustingMind)
   assertTrue(heardByD.confidence<=40)
   assertTrue(heardByD.confidence<heardByC.confidence)
+  assertEquals("ruins",bToC.subject)
+  assertEquals("ruins",heardByC.subject)
+  assertEquals("ruins",cToD.subject)
+  assertEquals("ruins",heardByD.subject)
+  assertEquals("ruins",engine.asBelief(heardByD).subject)
   assertNull(bToC.privateTruth)
   assertNull(cToD.privateTruth)
+ }
+
+ @Test fun heardClaimKeepsTheTestimonySubjectInBelief(){
+  val engine=SocialInformationEngine()
+  val testimony=Testimony("subject-1","elena","The ruins are unsafe","ruins",4)
+  val heard=engine.hear(testimony,"daniel",CharacterMind())
+
+  assertEquals("ruins",heard.subject)
+  assertEquals("ruins",engine.asBelief(heard).subject)
+ }
+ @Test fun legacyHeardClaimKeepsItsPreviousBeliefKey(){
+  val legacy=HeardClaim(
+   "legacy","daniel","elena","Something happened",30,4,InformationChannel.RUMOR
+  )
+
+  assertNull(legacy.subject)
+  assertEquals("elena:legacy",SocialInformationEngine().asBelief(legacy).subject)
  }
 
  @Test fun honestDirectTestimonySupersedesMatchingRumorWithoutErasingHistory(){

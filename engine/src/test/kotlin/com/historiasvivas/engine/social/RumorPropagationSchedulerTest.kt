@@ -22,7 +22,8 @@ class RumorPropagationSchedulerTest {
    intent=TestimonyIntent.HONEST,reliability=80,relatedEventId=eventId
   )
   val heard=HeardClaim(
-   direct.id,"elena","erik",claim,80,12,InformationChannel.DIRECT_TESTIMONY,eventId
+   direct.id,"elena","erik",claim,80,12,InformationChannel.DIRECT_TESTIMONY,
+   eventId,subject=direct.subject
   )
   val elenaMind=if(openSpeaker)openMind() else CharacterMind(
    personality=PersonalityProfile(mapOf("honesty" to 10,"secrecy" to 90,"caution" to 70))
@@ -66,6 +67,8 @@ class RumorPropagationSchedulerTest {
   assertEquals(TestimonyIntent.UNCERTAIN,testimony.intent)
   assertEquals(setOf("repair-testimony-1"),testimony.sourceEvidenceIds)
   assertEquals(eventId,testimony.relatedEventId)
+  assertEquals("elena",testimony.subject)
+  assertEquals("elena",heard.subject)
   assertEquals(65,heard.confidence)
   assertTrue(updated.world.characters.getValue("daniel").mind.beliefs.any{
    it.sourceEventId==testimony.id&&it.confidence==65
@@ -121,6 +124,10 @@ class RumorPropagationSchedulerTest {
   assertEquals("daniel",relayed.speakerId)
   assertEquals("nora",relayed.listenerId)
   assertEquals(50,relayed.confidence)
+  val testimony=second.world.socialKnowledge.testimonies.getValue(relayed.testimonyId)
+  val heard=second.world.socialKnowledge.heardClaims.getValue(testimony.id+":nora")
+  assertEquals("elena",testimony.subject)
+  assertEquals("elena",heard.subject)
   assertTrue(relayed.confidence<firstCycle.deliveries.single().confidence)
   assertTrue(KnowledgeGate().visible(second.world.hiddenEvents,"nora").isEmpty())
  }

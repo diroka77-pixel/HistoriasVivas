@@ -12,7 +12,8 @@ import com.historiasvivas.engine.character.*
 )
 @Serializable data class HeardClaim(
  val testimonyId:String,val listenerId:String,val speakerId:String,val claim:String,val confidence:Int,val turn:Long,val channel:InformationChannel,
- val relatedEventId:String?=null
+ val relatedEventId:String?=null,
+ val subject:String?=null
 )
 
 class SocialInformationEngine {
@@ -25,10 +26,16 @@ class SocialInformationEngine {
   val sourceReliability=testimony.reliability?:baseline
   val sociallyAdjusted=(sourceReliability+perceivedTrust/3).coerceIn(5,90)
   val confidence=if(testimony.channel==InformationChannel.RUMOR) sociallyAdjusted.coerceAtMost(sourceReliability) else sociallyAdjusted
-  return HeardClaim(testimony.id,listenerId,testimony.speakerId,testimony.claim,confidence,testimony.turn,testimony.channel,testimony.relatedEventId)
+  return HeardClaim(
+   testimonyId=testimony.id,listenerId=listenerId,speakerId=testimony.speakerId,
+   claim=testimony.claim,confidence=confidence,turn=testimony.turn,
+   channel=testimony.channel,relatedEventId=testimony.relatedEventId,
+   subject=testimony.subject
+  )
  }
  fun asBelief(heard:HeardClaim)=Belief(
-  subject=heard.speakerId+":"+heard.testimonyId,claim=heard.claim,confidence=heard.confidence,sourceEventId=heard.testimonyId
+  subject=heard.subject?:heard.speakerId+":"+heard.testimonyId,
+  claim=heard.claim,confidence=heard.confidence,sourceEventId=heard.testimonyId
  )
  fun integrateBelief(
   mind:CharacterMind,
