@@ -15,6 +15,19 @@ class CharacterAgencyTest {
   assertTrue(intents.any{it.characterId=="elena"&&it.kind==AgencyKind.CONFRONT&&it.targetCharacterId=="daniel"})
   assertTrue(intents.any{it.characterId=="elena"&&it.kind==AgencyKind.WITHDRAW})
  }
+ @Test fun equalPriorityIntentionsHaveStableCharacterOrder(){
+  val zara=Character("zara","Zara",goals=listOf("Explore"))
+  val alba=Character("alba","Alba",goals=listOf("Explore"))
+  val story=Story(
+   "s","Story","Premise",
+   world=WorldState(characters=linkedMapOf("zara" to zara,"alba" to alba))
+  )
+
+  assertEquals(
+   listOf("alba","zara"),
+   CharacterAgency().intents(story).map{it.characterId}
+  )
+ }
  @Test fun deadCharactersDoNotGenerateIntentions(){
   val dead=Character("erik","Erik",goals=listOf("Find Daniel"),alive=false)
   val story=Story("s","Story","Premise",world=WorldState(characters=mapOf("erik" to dead)))
