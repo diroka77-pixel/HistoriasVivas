@@ -15,7 +15,14 @@ data class AgencyIntent(
 
 class CharacterAgency {
  fun intents(story:Story):List<AgencyIntent> =
-  story.world.characters.values.filter{it.alive}.flatMap{character->buildIntents(character,story)}.sortedByDescending{it.priority}
+  story.world.characters.values.filter{it.alive}.flatMap{character->buildIntents(character,story)}
+   .sortedWith(
+    compareByDescending<AgencyIntent>{it.priority}
+     .thenBy{it.characterId}
+     .thenBy{it.kind.name}
+     .thenBy{it.targetCharacterId?:""}
+     .thenBy{it.motivation}
+   )
 
  private fun buildIntents(c:Character,story:Story):List<AgencyIntent>{
   val currentTurn=story.turn
