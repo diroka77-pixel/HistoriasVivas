@@ -1,7 +1,6 @@
 package com.historiasvivas.engine.social
 
-import com.historiasvivas.engine.character.CharacterMind
-import com.historiasvivas.engine.character.PersonalityProfile
+import com.historiasvivas.engine.character.*
 import com.historiasvivas.engine.model.Character
 import com.historiasvivas.engine.model.Story
 import com.historiasvivas.engine.model.WorldState
@@ -125,4 +124,50 @@ class RumorPropagationSchedulerTest {
   assertTrue(relayed.confidence<firstCycle.deliveries.single().confidence)
   assertTrue(KnowledgeGate().visible(second.world.hiddenEvents,"nora").isEmpty())
  }
+ @Test fun doubtedRumorIsNotRelayedAgain(){
+  val scheduler=RumorPropagationScheduler()
+  val (first,firstCycle)=scheduler.run(story())
+  val rumorId=firstCycle.deliveries.single().testimonyId
+  val daniel=first.world.characters.getValue("daniel")
+  val doubtingDaniel=daniel.copy(mind=daniel.mind.copy(
+   beliefs=daniel.mind.beliefs.map{
+    if(it.sourceEventId==rumorId)it.copy(status=BeliefStatus.DOUBTED) else it
+   }
+  ))
+  val prepared=first.copy(
+   turn=14,
+   world=first.world.copy(
+    characters=first.world.characters+
+     ("daniel" to doubtingDaniel)+
+     ("nora" to Character("nora","Nora")),
+    spatial=first.world.spatial.copy(
+     positions=first.world.spatial.positions+
+      ("nora" to CharacterPosition("nora","ruins"))
+    )
+   )
+  )
+
+  val (same,cycle)=scheduler.run(prepared)
+  assertSame(prepared,same)
+  assertTrue(cycle.deliveries.isEmpty())
+ }
+ @Test fun receivedRumorExpiresAsRelayMaterial(){
+  val scheduler=RumorPropagationScheduler()
+  val (first,_)=scheduler.run(story())
+  val stale=first.copy(
+   turn=17,
+   world=first.world.copy(
+    characters=first.world.characters+("nora" to Character("nora","Nora")),
+    spatial=first.world.spatial.copy(
+     positions=first.world.spatial.positions+
+      ("nora" to CharacterPosition("nora","ruins"))
+    )
+   )
+  )
+
+  val (same,cycle)=scheduler.run(stale)
+  assertSame(stale,same)
+  assertTrue(cycle.deliveries.isEmpty())
+ }
+
 }

@@ -1,5 +1,6 @@
 package com.historiasvivas.engine.social
 
+import com.historiasvivas.engine.character.BeliefStatus
 import com.historiasvivas.engine.model.Character
 import com.historiasvivas.engine.model.Story
 import com.historiasvivas.engine.spatial.SpatialEngine
@@ -32,6 +33,10 @@ class RumorPropagationScheduler(
    .forEach{original->
     if(deliveries.size>=maxRelays)return@forEach
     val speaker=current.world.characters[original.listenerId]?.takeIf{it.alive}?:return@forEach
+    val age=current.turn-original.turn
+    if(original.channel==InformationChannel.RUMOR&&age !in 1L..3L)return@forEach
+    val sourceBelief=speaker.mind.beliefs.firstOrNull{it.sourceEventId==original.testimonyId}
+    if(sourceBelief!=null&&sourceBelief.status!=BeliefStatus.ACTIVE)return@forEach
     if(propagationScore(speaker)<30)return@forEach
     if(current.world.socialKnowledge.testimonies.values.any{
       it.channel==InformationChannel.RUMOR&&
