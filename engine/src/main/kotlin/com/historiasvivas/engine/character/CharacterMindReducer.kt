@@ -8,9 +8,11 @@ class CharacterMindReducer {
   delta.beliefsToAdd.forEach{beliefs[it.subject+"|"+it.claim]=it}
   val emotional=character.mind.emotionalMemory.toMutableMap()
   delta.emotionalTracesToAdd.forEach{trace->emotional[trace.eventId]=trace}
+  val revisions=(character.mind.beliefRevisions+delta.beliefRevisionsToAdd).distinctBy{it.id}
   return character.copy(mind=character.mind.copy(
    personality=character.mind.personality.shifted(delta.personalityShifts),beliefs=beliefs.values.toList(),
-   personalMemories=character.mind.personalMemories+delta.memoriesToAdd,emotionalMemory=emotional
+   personalMemories=character.mind.personalMemories+delta.memoriesToAdd,emotionalMemory=emotional,
+   beliefRevisions=revisions
   ))
  }
  fun revise(character:Character,revision:EmotionalMemoryRevision):Character{
