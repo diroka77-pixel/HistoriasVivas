@@ -10,6 +10,7 @@ import com.historiasvivas.engine.spatial.SpatialEngine
 import com.historiasvivas.engine.social.RelationshipRepairConsequenceEngine
 import com.historiasvivas.engine.social.RelationshipRepairDisclosureScheduler
 import com.historiasvivas.engine.social.RelationshipRepairScheduler
+import com.historiasvivas.engine.social.RumorBeliefDecayEngine
 import com.historiasvivas.engine.social.RumorInvestigationScheduler
 import com.historiasvivas.engine.social.RumorPropagationScheduler
 
@@ -27,6 +28,7 @@ class TurnEngine(
  private val repairDisclosures:RelationshipRepairDisclosureScheduler=RelationshipRepairDisclosureScheduler(),
  private val rumorPropagation:RumorPropagationScheduler=RumorPropagationScheduler(),
  private val rumorInvestigations:RumorInvestigationScheduler=RumorInvestigationScheduler(),
+ private val rumorDecay:RumorBeliefDecayEngine=RumorBeliefDecayEngine(),
  private val repairScheduler:RelationshipRepairScheduler=RelationshipRepairScheduler(),
  private val spatial:SpatialEngine=SpatialEngine()
 ){
@@ -67,7 +69,8 @@ class TurnEngine(
   val (investigatedStory,_)=rumorInvestigations.run(
    socialStory,excludedCharacterIds=present,maxInvestigations=1
   )
-  val (autonomousStory,_)=autonomousScheduler.run(investigatedStory,present,maxCharacters=1)
+  val (epistemicStory,_)=rumorDecay.apply(investigatedStory)
+  val (autonomousStory,_)=autonomousScheduler.run(epistemicStory,present,maxCharacters=1)
   val (repairedStory,_)=repairScheduler.run(autonomousStory,present,maxAttempts=1)
   val updatedDirector=repairedStory.director.copy(
    lastEmergentTurn=causal.emergentTurn?:repairedStory.director.lastEmergentTurn,
