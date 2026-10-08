@@ -8,12 +8,12 @@ import com.historiasvivas.engine.character.*
  val id:String,val speakerId:String,val claim:String,val subject:String,val turn:Long,
  val sourceEvidenceIds:Set<String> = emptySet(),val channel:InformationChannel=InformationChannel.DIRECT_TESTIMONY,
  val intent:TestimonyIntent=TestimonyIntent.HONEST,val privateTruth:String?=null,val reliability:Int?=null,
- val relatedEventId:String?=null,
- val subject:String?=null
+ val relatedEventId:String?=null
 )
 @Serializable data class HeardClaim(
  val testimonyId:String,val listenerId:String,val speakerId:String,val claim:String,val confidence:Int,val turn:Long,val channel:InformationChannel,
- val relatedEventId:String?=null
+ val relatedEventId:String?=null,
+ val subject:String?=null
 )
 
 class SocialInformationEngine {
