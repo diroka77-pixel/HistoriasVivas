@@ -24,6 +24,40 @@ class ContradictionEngine {
   val loss=when(contradiction.outcome){
    ContradictionOutcome.DOUBT->10; ContradictionOutcome.CONFLICT->25; ContradictionOutcome.REVISE_BELIEF->45; ContradictionOutcome.REVELATION->70
   }
-  return contradiction.belief.copy(confidence=(contradiction.belief.confidence-loss).coerceAtLeast(0))
+  val status=when(contradiction.outcome){
+   ContradictionOutcome.DOUBT->BeliefStatus.DOUBTED
+   ContradictionOutcome.CONFLICT->BeliefStatus.CONTESTED
+   ContradictionOutcome.REVISE_BELIEF,ContradictionOutcome.REVELATION->BeliefStatus.REJECTED
+  }
+  return contradiction.belief.copy(
+   confidence=(contradiction.belief.confidence-loss).coerceAtLeast(0),
+   status=status,
+   lastRevisedTurn=contradiction.turn,
+   supersededBySourceId=if(contradiction.outcome==ContradictionOutcome.REVELATION)contradiction.evidenceId else null
+  )
+ }
+ fun revisionAfter(contradiction:Contradiction,confirmedClaim:String?=null):BeliefRevision{
+  val revised=beliefAfter(contradiction)
+  val confirmed=confirmedClaim?.takeIf{
+   contradiction.outcome==ContradictionOutcome.REVELATION && it.isNotBlank()
+  }?.let{
+   Belief(
+    subject=contradiction.belief.subject,
+    claim=it,
+    confidence=(70+contradiction.contradictionStrength/4).coerceAtMost(95),
+    sourceEventId=contradiction.evidenceId,
+    status=BeliefStatus.ACTIVE,
+    lastRevisedTurn=contradiction.turn
+   )
+  }
+  return BeliefRevision(
+   id=contradiction.id+"-revision",
+   previous=contradiction.belief,
+   revised=revised,
+   confirmed=confirmed,
+   evidenceId=contradiction.evidenceId,
+   sourceCharacterId=contradiction.sourceCharacterId,
+   turn=contradiction.turn
+  )
  }
 }
