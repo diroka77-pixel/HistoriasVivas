@@ -39,7 +39,7 @@ class CharacterAgencyTest {
    ))
   ))
   fun response(character:Character)=CharacterAgency().intents(
-   Story("s","Story","Premise",world=WorldState(characters=mapOf(character.id to character,"liar" to Character("liar","Liar"))))
+   Story("s","Story","Premise",world=WorldState(characters=mapOf(character.id to character,"liar" to Character("liar","Liar"))),turn=10)
   ).first{it.targetCharacterId=="liar"}
 
   assertEquals(AgencyKind.CONFRONT,response(character("brave",mapOf("courage" to 70,"patience" to 10))).kind)
@@ -51,5 +51,31 @@ class CharacterAgencyTest {
   val erik=Character("erik","Erik",mind=CharacterMind(beliefs=listOf(rejected)))
   val story=Story("s","Story","Premise",world=WorldState(characters=mapOf("erik" to erik)))
   assertTrue(CharacterAgency().intents(story).none{it.characterId=="erik"&&it.kind==AgencyKind.INVESTIGATE})
+ }
+ @Test fun oldDeceptionDoesNotRepeatButNewRevisionCanReactivateResponse(){
+  fun revision(id:String,turn:Long)=BeliefRevision(
+   id=id,
+   previous=Belief("signal","There is no signal",70,"lie"),
+   revised=Belief("signal","There is no signal",0,"lie",status=BeliefStatus.REJECTED),
+   confirmed=Belief("signal","The signal exists",90,"evidence-"+id),
+   evidenceId="evidence-"+id,
+   sourceCharacterId="liar",
+   turn=turn
+  )
+  val base=Character(
+   "elena","Elena",
+   mind=CharacterMind(
+    personality=PersonalityProfile(mapOf("courage" to 70)),
+    beliefRevisions=listOf(revision("old",10))
+   )
+  )
+  fun responses(character:Character,turn:Long)=CharacterAgency().intents(
+   Story("s","Story","Premise",world=WorldState(characters=mapOf("elena" to character,"liar" to Character("liar","Liar"))),turn=turn)
+  ).filter{it.targetCharacterId=="liar"}
+
+  assertTrue(responses(base,10).any{it.kind==AgencyKind.CONFRONT})
+  assertTrue(responses(base,11).isEmpty())
+  val deceivedAgain=base.copy(mind=base.mind.copy(beliefRevisions=base.mind.beliefRevisions+revision("new",11)))
+  assertTrue(responses(deceivedAgain,11).any{it.kind==AgencyKind.CONFRONT})
  }
 }
