@@ -1,6 +1,6 @@
 package com.historiasvivas.engine.social
 
-import com.historiasvivas.engine.character.CharacterMind
+import com.historiasvivas.engine.character.*
 import com.historiasvivas.engine.discovery.*
 import com.historiasvivas.engine.model.Character
 import com.historiasvivas.engine.model.Story
@@ -99,4 +99,39 @@ class RumorInvestigationSchedulerTest {
   assertEquals(once,same)
   assertEquals(1,same.world.discovery.evidence.size)
  }
+ @Test fun independentEvidenceRevisesTheRumorWithoutBlamingACharacter(){
+  val base=story()
+  val heard=base.world.socialKnowledge.heardClaims.getValue("rumor-1:elena")
+  val rumor=Testimony(
+   heard.testimonyId,"nora",heard.claim,"erik",heard.turn,
+   channel=InformationChannel.RUMOR,intent=TestimonyIntent.UNCERTAIN,
+   reliability=heard.confidence,relatedEventId=eventId
+  )
+  val oldBelief=SocialInformationEngine().asBelief(heard)
+  val primed=base.copy(world=base.world.copy(
+   characters=base.world.characters+(
+    "elena" to base.world.characters.getValue("elena").copy(
+     mind=base.world.characters.getValue("elena").mind.copy(beliefs=listOf(oldBelief))
+    )
+   ),
+   socialKnowledge=base.world.socialKnowledge.copy(
+    testimonies=mapOf(rumor.id to rumor)
+   )
+  ))
+
+  val (updated,cycle)=RumorInvestigationScheduler().run(primed)
+  val evidenceId=cycle.investigations.single().evidenceId
+  val mind=updated.world.characters.getValue("elena").mind
+  val revisedRumor=mind.beliefs.single{it.sourceEventId==rumor.id}
+  val grounded=mind.beliefs.single{it.sourceEventId==evidenceId}
+  val revision=mind.beliefRevisions.single()
+
+  assertEquals(BeliefStatus.CONTESTED,revisedRumor.status)
+  assertEquals(evidenceId,revisedRumor.supersededBySourceId)
+  assertEquals(BeliefStatus.ACTIVE,grounded.status)
+  assertEquals(evidenceId,revision.evidenceId)
+  assertEquals(grounded,revision.confirmed)
+  assertNull(revision.sourceCharacterId)
+ }
+
 }
