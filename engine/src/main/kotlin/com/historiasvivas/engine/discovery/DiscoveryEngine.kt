@@ -27,14 +27,14 @@ class DiscoveryEngine {
    val global=it.locationId==null&&it.routeFrom==null&&it.routeTo==null
    (local||global)&&it.salience>0&&
     it.statusFor(characterId) !in setOf(SignalStatus.INVESTIGATED,SignalStatus.IGNORED)
-  }.sortedByDescending{it.salience}
+  }.sortedWith(compareByDescending<WorldSignal>{it.salience}.thenBy{it.id})
  fun visibleOnJourney(state:DiscoveryState,characterId:String,from:String,to:String): List<WorldSignal> =
   state.signals.values.filter{s->
    val onRoute=(s.routeFrom==from&&s.routeTo==to)||(s.routeFrom==to&&s.routeTo==from)
    val global=s.locationId==null&&s.routeFrom==null&&s.routeTo==null
    (onRoute||global)&&s.salience>0&&
     s.statusFor(characterId) !in setOf(SignalStatus.INVESTIGATED,SignalStatus.IGNORED)
-  }.sortedByDescending{it.salience}
+  }.sortedWith(compareByDescending<WorldSignal>{it.salience}.thenBy{it.id})
  fun notice(state:DiscoveryState,signalId:String,characterId:String):DiscoveryState{
   val s=state.signals[signalId]?:return state
   return state.copy(signals=state.signals+(signalId to s.copy(noticedBy=s.noticedBy+characterId)))
