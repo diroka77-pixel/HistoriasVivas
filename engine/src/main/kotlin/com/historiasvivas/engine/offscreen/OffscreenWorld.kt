@@ -39,27 +39,33 @@ class KnowledgeGate {
   discovery:Discovery,
   sources:DiscoverySources=DiscoverySources()
  ):List<HiddenEvent>{
-  if(!isGrounded(discovery,sources))return events
+  val target=events.firstOrNull{it.id==discovery.eventId}?:return events
+  if(!target.discoverable||!isGrounded(target,discovery,sources))return events
   return events.map{event->
-   if(event.id==discovery.eventId && event.discoverable)
+   if(event.id==target.id)
     event.copy(discoveredBy=event.discoveredBy+discovery.characterId)
    else event
   }
  }
- private fun isGrounded(discovery:Discovery,sources:DiscoverySources):Boolean{
+ private fun isGrounded(
+  event:HiddenEvent,
+  discovery:Discovery,
+  sources:DiscoverySources
+ ):Boolean{
   if(discovery.interpretation.isBlank())return false
   val sourceId=discovery.sourceId
   return when(discovery.channel){
-   DiscoveryChannel.WITNESSED->sourceId.isNullOrBlank()
+   DiscoveryChannel.WITNESSED->
+    sourceId.isNullOrBlank()&&discovery.characterId in event.knownBy
    DiscoveryChannel.TOLD->sourceId?.let{sources.testimonies[it]}?.let{
     it.channel!=InformationChannel.RUMOR &&
      it.intent==TestimonyIntent.HONEST &&
-     it.relatedEventId==discovery.eventId &&
+     it.relatedEventId==event.id &&
      wasReceived(it,discovery,sources)
    }?:false
    DiscoveryChannel.RUMOR->false
    DiscoveryChannel.EVIDENCE,DiscoveryChannel.INVESTIGATION->sourceId?.let{sources.evidence[it]}?.let{
-    it.discoveredBy==discovery.characterId && it.relatedEventId==discovery.eventId
+    it.discoveredBy==discovery.characterId && it.relatedEventId==event.id
    }?:false
   }
  }
