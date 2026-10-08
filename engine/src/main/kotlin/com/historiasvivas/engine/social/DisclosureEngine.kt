@@ -14,10 +14,14 @@ class DisclosureEngine {
   val speaker=story.world.characters[speakerId]?:return null
   if(!speaker.alive||hypothesis.characterId!=speakerId)return null
   val relation=story.world.relationships.firstOrNull{it.fromCharacterId==speakerId&&it.toCharacterId==listenerId}
-  val rememberedFalseAccounts=speaker.mind.beliefRevisions.count{
-   it.sourceCharacterId==listenerId&&it.confirmed!=null
+  val falseAccounts=speaker.mind.beliefRevisions.filter{
+   it.sourceCharacterId==listenerId&&it.confirmed!=null&&it.turn<=story.turn
   }
-  val deceptionPenalty=(rememberedFalseAccounts*35).coerceAtMost(70)
+  val rememberedFalseAccounts=falseAccounts.size
+  val deceptionPenalty=falseAccounts.sumOf{
+   val age=(story.turn-it.turn).coerceAtLeast(0)
+   (35-age*3).coerceAtLeast(0).toInt()
+  }.coerceAtMost(70)
   val rawTrust=relation?.trust?:speaker.mind.perceptions[listenerId]?.impressions?.get("trust")?:0
   val trust=(rawTrust-deceptionPenalty).coerceIn(-100,100)
   val fear=relation?.fear?:0
@@ -39,7 +43,7 @@ class DisclosureEngine {
    else->null
   }
   return DisclosureDecision("disclosure-"+speakerId+"-"+listenerId+"-"+hypothesis.id+"-"+story.turn,speakerId,listenerId,hypothesis.id,kind,story.turn,
-   "trust=$trust fear=$fear honesty=$honesty caution=$caution loyalty=$loyalty rememberedFalseAccounts=$rememberedFalseAccounts",claim)
+   "trust=$trust fear=$fear honesty=$honesty caution=$caution loyalty=$loyalty rememberedFalseAccounts=$rememberedFalseAccounts deceptionPenalty=$deceptionPenalty",claim)
  }
  fun toTestimony(decision:DisclosureDecision,hypothesis:Hypothesis):Testimony?{
   val claim=decision.revealedClaim?:return null
