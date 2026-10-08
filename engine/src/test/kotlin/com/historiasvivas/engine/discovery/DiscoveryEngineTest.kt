@@ -19,6 +19,7 @@ class DiscoveryEngineTest {
   val engine=DiscoveryEngine()
 
   assertEquals(listOf(global.id),engine.visibleAt(state,"daniel","settlement").map{it.id})
+  assertEquals(listOf(global.id),engine.visibleAt(state,"daniel",null).map{it.id})
   assertEquals(
    listOf(global.id),
    engine.visibleOnJourney(state,"daniel","settlement","ruins").map{it.id}
