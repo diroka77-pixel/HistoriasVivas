@@ -41,6 +41,36 @@ class DiscoveryEngineTest {
   )
  }
 
+ @Test fun equalSalienceSignalsHaveStableIdentifierOrder(){
+  val localZ=WorldSignal(
+   "z-local","ruins",sense=SignalSense.SIGHT,surface="Z",createdTurn=1,salience=60
+  )
+  val localA=WorldSignal(
+   "a-local","ruins",sense=SignalSense.SIGHT,surface="A",createdTurn=1,salience=60
+  )
+  val routeZ=WorldSignal(
+   "z-route",null,routeFrom="settlement",routeTo="ruins",
+   sense=SignalSense.TRACE,surface="Z",createdTurn=1,salience=60
+  )
+  val routeA=WorldSignal(
+   "a-route",null,routeFrom="settlement",routeTo="ruins",
+   sense=SignalSense.TRACE,surface="A",createdTurn=1,salience=60
+  )
+  val state=DiscoveryState(linkedMapOf(
+   localZ.id to localZ,localA.id to localA,routeZ.id to routeZ,routeA.id to routeA
+  ))
+  val engine=DiscoveryEngine()
+
+  assertEquals(
+   listOf("a-local","z-local"),
+   engine.visibleAt(state,"daniel","ruins").map{it.id}
+  )
+  assertEquals(
+   listOf("a-route","z-route"),
+   engine.visibleOnJourney(state,"daniel","settlement","ruins").map{it.id}
+  )
+ }
+
  @Test fun ignoredSignalPersistsAndCanStillExistForSomeoneElse(){
   val signal=WorldSignal("radio","settlement",sense=SignalSense.RADIO,surface="A weak repeating pulse",hiddenCause="Old beacon",createdTurn=8)
   val engine=DiscoveryEngine(); val ignored=engine.ignore(DiscoveryState(mapOf("radio" to signal)),"radio","daniel")
