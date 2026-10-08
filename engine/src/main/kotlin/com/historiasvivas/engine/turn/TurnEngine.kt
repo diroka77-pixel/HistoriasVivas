@@ -7,6 +7,7 @@ import com.historiasvivas.engine.offscreen.OffscreenSimulator
 import com.historiasvivas.engine.director.*
 import com.historiasvivas.engine.agency.AutonomousTurnScheduler
 import com.historiasvivas.engine.spatial.SpatialEngine
+import com.historiasvivas.engine.social.RelationshipRepairConsequenceEngine
 import com.historiasvivas.engine.social.RelationshipRepairScheduler
 
 class TurnEngine(
@@ -19,6 +20,7 @@ class TurnEngine(
  private val pacing:EmergentPacingDirector=EmergentPacingDirector(),
  private val latentDirector:LatentEventDirector=LatentEventDirector(),
  private val autonomousScheduler:AutonomousTurnScheduler=AutonomousTurnScheduler(),
+ private val repairConsequences:RelationshipRepairConsequenceEngine=RelationshipRepairConsequenceEngine(),
  private val repairScheduler:RelationshipRepairScheduler=RelationshipRepairScheduler(),
  private val spatial:SpatialEngine=SpatialEngine()
 ){
@@ -53,7 +55,8 @@ class TurnEngine(
   val validation=validator.validate(story,delta)
   require(validation.accepted){"AI proposed an inconsistent world delta: "+validation.issues.joinToString{it.code}}
   val reduced=reducer.apply(story,delta)
-  val (autonomousStory,_)=autonomousScheduler.run(reduced,present,maxCharacters=1)
+  val (consequentialStory,_)=repairConsequences.resolve(reduced,maxConsequences=2)
+  val (autonomousStory,_)=autonomousScheduler.run(consequentialStory,present,maxCharacters=1)
   val (repairedStory,_)=repairScheduler.run(autonomousStory,present,maxAttempts=1)
   val updatedDirector=repairedStory.director.copy(
    lastEmergentTurn=causal.emergentTurn?:repairedStory.director.lastEmergentTurn,
