@@ -84,10 +84,12 @@ class AutonomousActionExecutor(
     val testimony=disclosure.toTestimony(decision,hypothesis)
      ?:return story to AutonomousActionResult(plan.id,ActionExecutionStatus.DEFERRED,"Speaker delays warning")
     val heard=social.hear(testimony,listenerId,listener.mind)
-    val belief=social.asBelief(heard)
-    val updatedListener=listener.copy(mind=listener.mind.copy(beliefs=listener.mind.beliefs+belief))
+    val testimonies=story.world.socialKnowledge.testimonies+(testimony.id to testimony)
+    val updatedListener=listener.copy(mind=social.integrateBelief(
+     listener.mind,heard,testimonies,story.turn
+    ))
     val knowledge=story.world.socialKnowledge.copy(
-     testimonies=story.world.socialKnowledge.testimonies+(testimony.id to testimony),
+     testimonies=testimonies,
      heardClaims=story.world.socialKnowledge.heardClaims+(testimony.id+":"+listenerId to heard),
      disclosureHistory=story.world.socialKnowledge.disclosureHistory+(decision.id to decision)
     )
