@@ -1,6 +1,8 @@
 package com.historiasvivas.engine.agency
 import com.historiasvivas.engine.character.BeliefStatus
 import com.historiasvivas.engine.model.*
+import com.historiasvivas.engine.social.InformationChannel
+import com.historiasvivas.engine.social.TestimonyIntent
 
 enum class AgencyKind { PURSUE_GOAL, PROTECT, CONFRONT, WITHDRAW, INVESTIGATE, RECONNECT }
 data class AgencyIntent(
@@ -13,9 +15,10 @@ data class AgencyIntent(
 
 class CharacterAgency {
  fun intents(story:Story):List<AgencyIntent> =
-  story.world.characters.values.filter{it.alive}.flatMap{character->buildIntents(character,story.turn)}.sortedByDescending{it.priority}
+  story.world.characters.values.filter{it.alive}.flatMap{character->buildIntents(character,story)}.sortedByDescending{it.priority}
 
- private fun buildIntents(c:Character,currentTurn:Long):List<AgencyIntent>{
+ private fun buildIntents(c:Character,story:Story):List<AgencyIntent>{
+  val currentTurn=story.turn
   val result=mutableListOf<AgencyIntent>()
   val personality=c.mind.personality.dimensions
   val courage=personality["courage"]?:0
@@ -51,6 +54,39 @@ class CharacterAgency {
    if(belief.claim.contains("unknown",true)||belief.claim.contains("mystery",true))
     result+=AgencyIntent(c.id,AgencyKind.INVESTIGATE,"Strong belief: "+belief.claim,priority=60)
   }
+  story.world.socialKnowledge.heardClaims.values.asSequence()
+   .filter{heard->
+    val age=currentTurn-heard.turn
+    heard.listenerId==c.id&&heard.channel==InformationChannel.RUMOR&&
+     heard.confidence>=40&&age in 0L..3L
+   }
+   .groupBy{it.relatedEventId?:"testimony:"+it.testimonyId}
+   .mapValues{(_,claims)->claims.maxBy{it.confidence}}
+   .values
+   .filterNot{heard->isGrounded(story,c.id,heard.relatedEventId)}
+   .forEach{heard->
+    result+=AgencyIntent(
+     c.id,
+     AgencyKind.INVESTIGATE,
+     "Seeks independent confirmation of a recent uncertain report",
+     priority=(45+heard.confidence/2+caution/5).coerceIn(45,85)
+    )
+   }
   return result
+ }
+
+ private fun isGrounded(story:Story,characterId:String,eventId:String?):Boolean{
+  if(eventId==null)return false
+  val event=story.world.hiddenEvents.firstOrNull{it.id==eventId}
+  if(event!=null&&(characterId in event.knownBy||characterId in event.discoveredBy))return true
+  if(story.world.discovery.evidence.values.any{
+    it.discoveredBy==characterId&&it.relatedEventId==eventId
+   })return true
+  return story.world.socialKnowledge.heardClaims.values.any{heard->
+   heard.listenerId==characterId&&
+    heard.relatedEventId==eventId&&
+    heard.channel!=InformationChannel.RUMOR&&
+    story.world.socialKnowledge.testimonies[heard.testimonyId]?.intent==TestimonyIntent.HONEST
+  }
  }
 }
