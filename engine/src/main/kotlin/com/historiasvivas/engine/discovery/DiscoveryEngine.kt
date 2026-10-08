@@ -21,15 +21,13 @@ import kotlinx.serialization.Serializable
 @Serializable data class DiscoveryState(val signals:Map<String,WorldSignal> = emptyMap(),val evidence:Map<String,Evidence> = emptyMap(),val interpretations:Map<String,Interpretation> = emptyMap())
 
 class DiscoveryEngine {
- fun visibleAt(state:DiscoveryState,characterId:String,locationId:String?): List<WorldSignal> {
-  if(locationId==null)return emptyList()
-  return state.signals.values.filter{
-   val local=it.locationId==locationId
+ fun visibleAt(state:DiscoveryState,characterId:String,locationId:String?): List<WorldSignal> =
+  state.signals.values.filter{
+   val local=locationId!=null&&it.locationId==locationId
    val global=it.locationId==null&&it.routeFrom==null&&it.routeTo==null
    (local||global)&&it.salience>0&&
     it.statusFor(characterId) !in setOf(SignalStatus.INVESTIGATED,SignalStatus.IGNORED)
   }.sortedByDescending{it.salience}
- }
  fun visibleOnJourney(state:DiscoveryState,characterId:String,from:String,to:String): List<WorldSignal> =
   state.signals.values.filter{s->
    val onRoute=(s.routeFrom==from&&s.routeTo==to)||(s.routeFrom==to&&s.routeTo==from)
