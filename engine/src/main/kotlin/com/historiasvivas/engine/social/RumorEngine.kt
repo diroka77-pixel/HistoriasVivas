@@ -12,7 +12,7 @@ class RumorEngine {
  fun relay(original:HeardClaim,newSpeakerId:String,newListenerId:String,turn:Long,summary:String=original.claim):Testimony{
   val degraded=(original.confidence-15).coerceAtLeast(5)
   return Testimony(
-   id="rumor-"+original.testimonyId+"-"+newSpeakerId+"-"+turn,
+   id="rumor-"+original.testimonyId+"-"+newSpeakerId+"-"+newListenerId+"-"+turn,
    speakerId=newSpeakerId,claim=summary,subject=original.speakerId,turn=turn,
    sourceEvidenceIds=setOf(original.testimonyId),channel=InformationChannel.RUMOR,
    intent=TestimonyIntent.UNCERTAIN,privateTruth=null,reliability=degraded,
