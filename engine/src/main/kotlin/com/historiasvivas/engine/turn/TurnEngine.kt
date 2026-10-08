@@ -6,6 +6,7 @@ import com.historiasvivas.engine.validation.ContinuityValidator
 import com.historiasvivas.engine.offscreen.OffscreenSimulator
 import com.historiasvivas.engine.director.*
 import com.historiasvivas.engine.agency.AutonomousTurnScheduler
+import com.historiasvivas.engine.spatial.ScenePresence
 import com.historiasvivas.engine.spatial.SpatialEngine
 import com.historiasvivas.engine.social.RelationshipRepairConsequenceEngine
 import com.historiasvivas.engine.social.RelationshipRepairDisclosureScheduler
@@ -30,7 +31,8 @@ class TurnEngine(
  private val rumorInvestigations:RumorInvestigationScheduler=RumorInvestigationScheduler(),
  private val rumorDecay:RumorBeliefDecayEngine=RumorBeliefDecayEngine(),
  private val repairScheduler:RelationshipRepairScheduler=RelationshipRepairScheduler(),
- private val spatial:SpatialEngine=SpatialEngine()
+ private val spatial:SpatialEngine=SpatialEngine(),
+ private val presence:ScenePresence=ScenePresence(spatial)
 ){
  suspend fun play(story:Story,userAction:String):TurnResult{
   require(story.status==StoryStatus.ACTIVE){"Story is not active"}
@@ -42,10 +44,8 @@ class TurnEngine(
    summary=response.eventSummary.ifBlank{userAction.take(240)},
    participants=response.participantIds,tags=response.tags,permanent=response.canonical
   )
-  val protagonistLocation=spatial.locationOf(story.world.spatial,story.protagonistId)
-  val spatiallyPresent=protagonistLocation?.let{spatial.presentAt(story.world.spatial,it)}?:setOf(story.protagonistId)
-  val present=spatiallyPresent.filter{it in story.world.characters}.toSet()
-  val offscreenHidden=offscreen.plan(story,present,maxActions=2).map{it.hiddenEvent}
+  val initialPresent=presence.withProtagonist(story)
+  val offscreenHidden=offscreen.plan(story,initialPresent,maxActions=2).map{it.hiddenEvent}
   val causal=causalWorld.advance(story,story.director.lastEmergentTurn)
   val pacingDecision=pacing.decide(story,causal,context.narrativeBeat.mode)
   val currentSurfaced=if(pacingDecision.focus==EmergentFocus.SURFACE_NOW)causal.publicEvents else emptyList()
@@ -66,12 +66,13 @@ class TurnEngine(
   val (consequentialStory,_)=repairConsequences.resolve(reduced,maxConsequences=2)
   val (disclosedStory,_)=repairDisclosures.run(consequentialStory,maxDisclosures=1)
   val (socialStory,_)=rumorPropagation.run(disclosedStory,maxRelays=1)
+  val postTurnPresent=presence.withProtagonist(socialStory)
   val (investigatedStory,_)=rumorInvestigations.run(
-   socialStory,excludedCharacterIds=present,maxInvestigations=1
+   socialStory,excludedCharacterIds=postTurnPresent,maxInvestigations=1
   )
   val (epistemicStory,_)=rumorDecay.apply(investigatedStory)
-  val (autonomousStory,_)=autonomousScheduler.run(epistemicStory,present,maxCharacters=1)
-  val (repairedStory,_)=repairScheduler.run(autonomousStory,present,maxAttempts=1)
+  val (autonomousStory,_)=autonomousScheduler.run(epistemicStory,postTurnPresent,maxCharacters=1)
+  val (repairedStory,_)=repairScheduler.run(autonomousStory,postTurnPresent,maxAttempts=1)
   val updatedDirector=repairedStory.director.copy(
    lastEmergentTurn=causal.emergentTurn?:repairedStory.director.lastEmergentTurn,
    latentEmergentEventIds=(repairedStory.director.latentEmergentEventIds+latentIds)-consumedLatentIds,
