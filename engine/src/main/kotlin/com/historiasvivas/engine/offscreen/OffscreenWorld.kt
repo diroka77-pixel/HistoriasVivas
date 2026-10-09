@@ -34,20 +34,37 @@ data class DiscoverySources(
 class KnowledgeGate {
  fun visible(events:List<HiddenEvent>,characterId:String):List<HiddenEvent> =
   events.filter{characterId in it.knownBy || characterId in it.discoveredBy}
+ fun hasGroundedKnowledge(
+  event:HiddenEvent,
+  characterId:String,
+  sources:DiscoverySources
+ ):Boolean{
+  if(characterId in event.knownBy||characterId in event.discoveredBy)return true
+  if(sources.evidence.values.any{
+    it.discoveredBy==characterId&&it.relatedEventId==event.id
+   })return true
+  return sources.testimonies.values.any{testimony->
+   testimony.channel!=InformationChannel.RUMOR&&
+    testimony.intent==TestimonyIntent.HONEST&&
+    testimony.relatedEventId==event.id&&
+    (testimony.speakerId in event.knownBy||testimony.speakerId in event.discoveredBy)&&
+    wasReceived(testimony,characterId,event.id,sources)
+  }
+ }
  fun discover(
   events:List<HiddenEvent>,
   discovery:Discovery,
   sources:DiscoverySources=DiscoverySources()
  ):List<HiddenEvent>{
   val target=events.firstOrNull{it.id==discovery.eventId}?:return events
-  if(!target.discoverable||!isGrounded(target,discovery,sources))return events
+  if(!target.discoverable||!isDiscoveryGrounded(target,discovery,sources))return events
   return events.map{event->
    if(event.id==target.id)
     event.copy(discoveredBy=event.discoveredBy+discovery.characterId)
    else event
   }
  }
- private fun isGrounded(
+ private fun isDiscoveryGrounded(
   event:HiddenEvent,
   discovery:Discovery,
   sources:DiscoverySources
@@ -62,7 +79,7 @@ class KnowledgeGate {
      testimony.intent==TestimonyIntent.HONEST &&
      testimony.relatedEventId==event.id &&
      (testimony.speakerId in event.knownBy||testimony.speakerId in event.discoveredBy) &&
-     wasReceived(testimony,discovery,sources)
+     wasReceived(testimony,discovery.characterId,event.id,sources)
    }?:false
    DiscoveryChannel.RUMOR->false
    DiscoveryChannel.EVIDENCE,DiscoveryChannel.INVESTIGATION->sourceId?.let{sources.evidence[it]}?.let{
@@ -70,15 +87,19 @@ class KnowledgeGate {
    }?:false
   }
  }
- private fun wasReceived(testimony:Testimony,discovery:Discovery,sources:DiscoverySources):Boolean =
-  sources.heardClaims.values.any{
+ private fun wasReceived(
+  testimony:Testimony,
+  listenerId:String,
+  eventId:String,
+  sources:DiscoverySources
+ ):Boolean = sources.heardClaims.values.any{
    it.testimonyId==testimony.id &&
-    it.listenerId==discovery.characterId &&
+    it.listenerId==listenerId &&
     it.speakerId==testimony.speakerId &&
     it.claim==testimony.claim &&
     it.channel==testimony.channel &&
     it.turn==testimony.turn &&
     (it.subject==null||it.subject==testimony.subject) &&
-    it.relatedEventId==discovery.eventId
+    it.relatedEventId==eventId
   }
 }
