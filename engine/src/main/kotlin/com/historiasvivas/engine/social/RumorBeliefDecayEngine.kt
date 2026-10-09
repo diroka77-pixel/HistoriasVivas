@@ -3,6 +3,8 @@ package com.historiasvivas.engine.social
 import com.historiasvivas.engine.character.BeliefRevision
 import com.historiasvivas.engine.character.BeliefStatus
 import com.historiasvivas.engine.model.Story
+import com.historiasvivas.engine.offscreen.DiscoverySources
+import com.historiasvivas.engine.offscreen.KnowledgeGate
 
 data class RumorBeliefDecay(
  val characterId:String,
@@ -15,7 +17,8 @@ data class RumorBeliefDecayCycle(
 
 class RumorBeliefDecayEngine(
  private val unverifiedTurns:Long=4,
- private val confidenceLoss:Int=20
+ private val confidenceLoss:Int=20,
+ private val knowledge:KnowledgeGate=KnowledgeGate()
 ){
  fun apply(story:Story):Pair<Story,RumorBeliefDecayCycle>{
   var characters=story.world.characters
@@ -64,16 +67,15 @@ class RumorBeliefDecayEngine(
  }
 
  private fun isGrounded(story:Story,characterId:String,eventId:String?):Boolean{
-  if(eventId==null)return false
-  val event=story.world.hiddenEvents.firstOrNull{it.id==eventId}
-  if(event!=null&&(characterId in event.knownBy||characterId in event.discoveredBy))return true
-  if(story.world.discovery.evidence.values.any{
-    it.discoveredBy==characterId&&it.relatedEventId==eventId
-   })return true
-  return story.world.socialKnowledge.heardClaims.values.any{heard->
-   heard.listenerId==characterId&&heard.relatedEventId==eventId&&
-    heard.channel!=InformationChannel.RUMOR&&
-    story.world.socialKnowledge.testimonies[heard.testimonyId]?.intent==TestimonyIntent.HONEST
-  }
+  val event=eventId?.let{id->story.world.hiddenEvents.firstOrNull{it.id==id}}?:return false
+  return knowledge.hasGroundedKnowledge(
+   event,
+   characterId,
+   DiscoverySources(
+    evidence=story.world.discovery.evidence,
+    testimonies=story.world.socialKnowledge.testimonies,
+    heardClaims=story.world.socialKnowledge.heardClaims
+   )
+  )
  }
 }
