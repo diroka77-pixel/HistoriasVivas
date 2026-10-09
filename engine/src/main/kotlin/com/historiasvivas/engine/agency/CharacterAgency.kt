@@ -3,6 +3,7 @@ import com.historiasvivas.engine.character.BeliefStatus
 import com.historiasvivas.engine.model.*
 import com.historiasvivas.engine.offscreen.DiscoverySources
 import com.historiasvivas.engine.offscreen.KnowledgeGate
+import com.historiasvivas.engine.social.InformationChannel
 
 enum class AgencyKind { PURSUE_GOAL, PROTECT, CONFRONT, WITHDRAW, INVESTIGATE, RECONNECT }
 data class AgencyIntent(
