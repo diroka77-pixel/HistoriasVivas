@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned llama.cpp
@@ -28,9 +28,9 @@ jobs:
         with:
           gradle-version: '8.10.2'
       - name: Test narrative engine
-        run: gradle -PincludeAndroidLab=true :engine:test --stacktrace
+        run: gradle -PincludeAndroidLab=true :engine:test --stacktrace --no-daemon
       - name: Build debug APK
-        run: gradle -PincludeAndroidLab=true :android-lab:assembleDebug --stacktrace
+        run: gradle -PincludeAndroidLab=true :android-lab:assembleDebug --stacktrace --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: HistoriasVivas-Lab-debug
