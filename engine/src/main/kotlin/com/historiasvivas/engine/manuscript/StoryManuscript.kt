@@ -22,6 +22,7 @@ data class StoryManuscript(
   appendLine(title);appendLine()
   entries.forEach{e->
    appendLine("— Turno "+e.turn+" —")
+   appendLine("Tú: "+e.userAction.trim());appendLine()
    appendLine(e.prose.trim());appendLine()
   }
  }
