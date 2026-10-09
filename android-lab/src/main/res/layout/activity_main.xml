@@ -1,1 +1,62 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="match_parent"><TextView android:text="Las ruinas de Nadir" android:textSize="24sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content"/><TextView android:id="@+id/modelStatus" android:text="Modelo local: no seleccionado" android:layout_width="match_parent" android:layout_height="wrap_content"/><Button android:id="@+id/selectModel" android:text="Seleccionar modelo GGUF" android:layout_width="match_parent" android:layout_height="wrap_content"/><ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"><TextView android:id="@+id/storyText" android:text="Laboratorio preparado. Selecciona el modelo local para comenzar." android:textSize="17sp" android:lineSpacingExtra="5dp" android:layout_width="match_parent" android:layout_height="wrap_content"/></ScrollView><TextView android:id="@+id/metrics" android:text="Sin métricas todavía" android:layout_width="match_parent" android:layout_height="wrap_content"/><EditText android:id="@+id/actionText" android:hint="¿Qué haces o dices?" android:maxLines="4" android:layout_width="match_parent" android:layout_height="wrap_content"/><Button android:id="@+id/sendAction" android:text="Continuar historia" android:enabled="false" android:layout_width="match_parent" android:layout_height="wrap_content"/></LinearLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:text="Las ruinas de Nadir"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/modelStatus"
+        android:text="Modelo local: no seleccionado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/selectModel"
+        android:text="Seleccionar modelo GGUF"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <ScrollView
+        android:id="@+id/storyScroll"
+        android:fillViewport="true"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/storyText"
+            android:text="Laboratorio preparado. Selecciona el modelo local para comenzar."
+            android:textSize="17sp"
+            android:lineSpacingExtra="5dp"
+            android:paddingBottom="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/metrics"
+        android:text="Sin métricas todavía"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/actionText"
+        android:hint="¿Qué haces o dices?"
+        android:maxLines="4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/sendAction"
+        android:text="Continuar historia"
+        android:enabled="false"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</LinearLayout>
