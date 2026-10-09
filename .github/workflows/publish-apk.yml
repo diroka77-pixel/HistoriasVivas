@@ -1,0 +1,24 @@
+name: Publicar APK directa
+on:
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Descargar APK compilada
+        uses: actions/download-artifact@v4
+        with:
+          name: HistoriasVivas-Lab-debug
+          path: apk
+          repository: diroka77-pixel/HistoriasVivas
+          run-id: 37896298281
+          github-token: ${{ github.token }}
+      - name: Preparar nombre directo
+        run: mv apk/android-lab-debug.apk HistoriasVivas-Alfa-0.1.3.apk
+      - name: Publicar versión
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create v0.1.3 HistoriasVivas-Alfa-0.1.3.apk --repo diroka77-pixel/HistoriasVivas --title "Historias Vivas 0.1.3" --notes "Carga automática del modelo guardado y recuperación del manuscrito completo."
