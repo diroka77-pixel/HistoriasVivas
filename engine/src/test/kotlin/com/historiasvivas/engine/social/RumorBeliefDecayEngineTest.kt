@@ -92,6 +92,26 @@ class RumorBeliefDecayEngineTest {
   assertEquals(once,same)
   assertEquals(1,same.world.characters.getValue("elena").mind.beliefRevisions.size)
  }
+ @Test fun testimonyFromAnUninformedSpeakerDoesNotGroundTheRumor(){
+  val original=story(direct=true)
+  val knowledge=original.world.socialKnowledge
+  val direct=knowledge.testimonies.getValue("direct-1").copy(speakerId="nora")
+  val heard=knowledge.heardClaims.getValue("direct-1:elena").copy(speakerId="nora")
+  val ungrounded=original.copy(world=original.world.copy(
+   socialKnowledge=knowledge.copy(
+    testimonies=knowledge.testimonies+("direct-1" to direct),
+    heardClaims=knowledge.heardClaims+("direct-1:elena" to heard)
+   )
+  ))
+
+  val (updated,cycle)=RumorBeliefDecayEngine().apply(ungrounded)
+
+  assertEquals(1,cycle.decayed.size)
+  assertEquals(
+   BeliefStatus.DOUBTED,
+   updated.world.characters.getValue("elena").mind.beliefs.single().status
+  )
+ }
  @Test fun groundedRumorIsNotDowngradedByTime(){
   val ownedEvidence=Evidence(
    "e1","signal-1","Observed conduct",70,8,"elena",eventId
