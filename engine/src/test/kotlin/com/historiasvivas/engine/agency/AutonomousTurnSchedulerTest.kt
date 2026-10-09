@@ -49,6 +49,33 @@ class AutonomousTurnSchedulerTest {
   assertTrue(updated.world.reasoning.hypotheses.isNotEmpty())
  }
 
+ @Test fun hiddenHistoryKnowsDirectWitnessesWithoutLeakingRemoteTargets(){
+  val history=AutonomousActionHistory()
+  val warningPlan=AutonomousActionPlan(
+   "warn","erik","h",AutonomousActionKind.WARN,80,
+   targetCharacterId="elena",motivation="Warn",turn=12
+  )
+  val warningEvent=StoryEvent(
+   "warn-event",12,"Erik warns Elena",setOf("erik","elena")
+  )
+  val warning=AutonomousActionResult(
+   warningPlan.id,ActionExecutionStatus.STARTED,"Delivered",warningEvent,
+   eventWitnessIds=setOf("erik","elena")
+  )
+  assertEquals(
+   setOf("erik","elena"),
+   history.materialize(warningPlan,warning)!!.knownBy
+  )
+
+  val protectPlan=warningPlan.copy(
+   id="protect",kind=AutonomousActionKind.PROTECT,motivation="Protect"
+  )
+  val departure=AutonomousActionResult(
+   protectPlan.id,ActionExecutionStatus.STARTED,"Journey started",
+   StoryEvent("protect-event",12,"Erik leaves to protect Elena",setOf("erik","elena"))
+  )
+  assertEquals(setOf("erik"),history.materialize(protectPlan,departure)!!.knownBy)
+ }
  @Test fun recentStartedPlanPreventsImmediateRepeatedAutonomy(){
   val s=story()
   val plan=AutonomousActionPlan("recent","erik","h",AutonomousActionKind.TRAVEL,70,motivation="Pursue",turn=s.turn-1)
