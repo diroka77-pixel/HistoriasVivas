@@ -86,6 +86,25 @@ class CharacterAgencyRumorTest {
 
   assertTrue(CharacterAgency().intents(grounded).isEmpty())
  }
+ @Test fun uninformedHonestSpeakerDoesNotSuppressInvestigation(){
+  val direct=Testimony(
+   "direct-uninformed","nora","A private repair happened","elena",11,
+   channel=InformationChannel.DIRECT_TESTIMONY,intent=TestimonyIntent.HONEST,
+   relatedEventId=eventId
+  )
+  val heard=HeardClaim(
+   direct.id,"elena","nora",direct.claim,80,11,
+   InformationChannel.DIRECT_TESTIMONY,eventId
+  )
+  val ungrounded=story(
+   additionalTestimonies=mapOf(direct.id to direct),
+   additionalClaims=mapOf(direct.id+":elena" to heard)
+  )
+
+  assertTrue(CharacterAgency().intents(ungrounded).any{
+   it.characterId=="elena"&&it.kind==AgencyKind.INVESTIGATE
+  })
+ }
  @Test fun ownedEvidenceOrKnownEventSuppressesRumorInvestigation(){
   val evidence=Evidence(
    "e1","signal-1","Observed follow-through",70,11,"elena",eventId
