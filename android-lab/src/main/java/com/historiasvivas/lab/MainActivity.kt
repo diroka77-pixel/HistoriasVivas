@@ -1,6 +1,8 @@
 package com.historiasvivas.lab
 import android.net.Uri
 import android.os.Bundle
+import android.view.ViewGroup
+import android.view.WindowInsets
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -25,9 +27,25 @@ class MainActivity:AppCompatActivity(){
  private val manuscriptPersistence=ManuscriptPersistence()
  private val selectModel=registerForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)lifecycleScope.launch{prepareModel(uri)}}
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContentView(R.layout.activity_main)
+  applySafeAreaInsets()
   status=findViewById(R.id.modelStatus);storyText=findViewById(R.id.storyText);metrics=findViewById(R.id.metrics);action=findViewById(R.id.actionText);send=findViewById(R.id.sendAction)
   lifecycleScope.launch(Dispatchers.Default){engine=AiChat.getInferenceEngine(applicationContext)}
   findViewById<Button>(R.id.selectModel).setOnClickListener{selectModel.launch(arrayOf("*/*"))};send.setOnClickListener{playTurn()}
+ }
+ private fun applySafeAreaInsets(){
+  // Keep the XML spacing, then reserve the actual system bars and keyboard.
+  // Capture once so repeated inset dispatches do not accumulate padding.
+  window.setDecorFitsSystemWindows(false)
+  val root=findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+  val left=root.paddingLeft; val top=root.paddingTop
+  val right=root.paddingRight; val bottom=root.paddingBottom
+  root.setOnApplyWindowInsetsListener { view,insets ->
+   val safe=insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+   val keyboard=insets.getInsets(WindowInsets.Type.ime())
+   view.setPadding(left+safe.left,top+safe.top,right+safe.right,bottom+maxOf(safe.bottom,keyboard.bottom))
+   insets
+  }
+  root.requestApplyInsets()
  }
  private suspend fun prepareModel(uri:Uri)=withContext(Dispatchers.IO){
   withContext(Dispatchers.Main){status.text="Copiando modelo local…";send.isEnabled=false}
