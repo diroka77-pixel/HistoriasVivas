@@ -9,7 +9,11 @@ import com.historiasvivas.engine.social.*
 
 @Serializable enum class ActionExecutionStatus { STARTED, BLOCKED, DEFERRED }
 @Serializable data class AutonomousActionResult(
- val planId:String,val status:ActionExecutionStatus,val reason:String,val event:StoryEvent?=null
+ val planId:String,
+ val status:ActionExecutionStatus,
+ val reason:String,
+ val event:StoryEvent?=null,
+ val eventWitnessIds:Set<String> = emptySet()
 )
 
 class AutonomousActionExecutor(
@@ -122,7 +126,10 @@ class AutonomousActionExecutor(
     )
     val event=StoryEvent(plan.id+"-warning",story.turn,c.name+" warns "+listener.name+" about a perceived danger",setOf(c.id,listenerId),setOf("autonomous","warning"))
     story.copy(world=story.world.copy(characters=story.world.characters+(listenerId to updatedListener),socialKnowledge=knowledge)) to
-     AutonomousActionResult(plan.id,ActionExecutionStatus.STARTED,"Warning delivered",event)
+     AutonomousActionResult(
+      plan.id,ActionExecutionStatus.STARTED,"Warning delivered",event,
+      eventWitnessIds=setOf(c.id,listenerId)
+     )
    }
    AutonomousActionKind.HIDE_EVIDENCE->{
     val location=spatial.locationOf(story.world.spatial,plan.characterId)
