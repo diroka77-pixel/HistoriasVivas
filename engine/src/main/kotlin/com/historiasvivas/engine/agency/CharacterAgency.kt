@@ -1,8 +1,8 @@
 package com.historiasvivas.engine.agency
 import com.historiasvivas.engine.character.BeliefStatus
 import com.historiasvivas.engine.model.*
-import com.historiasvivas.engine.social.InformationChannel
-import com.historiasvivas.engine.social.TestimonyIntent
+import com.historiasvivas.engine.offscreen.DiscoverySources
+import com.historiasvivas.engine.offscreen.KnowledgeGate
 
 enum class AgencyKind { PURSUE_GOAL, PROTECT, CONFRONT, WITHDRAW, INVESTIGATE, RECONNECT }
 data class AgencyIntent(
@@ -13,7 +13,9 @@ data class AgencyIntent(
  val priority:Int=0
 )
 
-class CharacterAgency {
+class CharacterAgency(
+ private val knowledge:KnowledgeGate=KnowledgeGate()
+){
  fun intents(story:Story):List<AgencyIntent> =
   story.world.characters.values.filter{it.alive}.flatMap{character->buildIntents(character,story)}
    .sortedWith(
@@ -83,17 +85,15 @@ class CharacterAgency {
  }
 
  private fun isGrounded(story:Story,characterId:String,eventId:String?):Boolean{
-  if(eventId==null)return false
-  val event=story.world.hiddenEvents.firstOrNull{it.id==eventId}
-  if(event!=null&&(characterId in event.knownBy||characterId in event.discoveredBy))return true
-  if(story.world.discovery.evidence.values.any{
-    it.discoveredBy==characterId&&it.relatedEventId==eventId
-   })return true
-  return story.world.socialKnowledge.heardClaims.values.any{heard->
-   heard.listenerId==characterId&&
-    heard.relatedEventId==eventId&&
-    heard.channel!=InformationChannel.RUMOR&&
-    story.world.socialKnowledge.testimonies[heard.testimonyId]?.intent==TestimonyIntent.HONEST
-  }
+  val event=eventId?.let{id->story.world.hiddenEvents.firstOrNull{it.id==id}}?:return false
+  return knowledge.hasGroundedKnowledge(
+   event,
+   characterId,
+   DiscoverySources(
+    evidence=story.world.discovery.evidence,
+    testimonies=story.world.socialKnowledge.testimonies,
+    heardClaims=story.world.socialKnowledge.heardClaims
+   )
+  )
  }
 }
