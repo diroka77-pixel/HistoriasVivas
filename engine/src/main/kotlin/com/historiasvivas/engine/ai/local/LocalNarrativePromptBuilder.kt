@@ -12,7 +12,7 @@ class LocalNarrativePromptBuilder {
         - Nunca repitas, reformules ni confirmes sin más las palabras del jugador.
         - Cada respuesta debe hacer avanzar la escena con una reacción, consecuencia o descubrimiento nuevo.
         - Si Daniel habla o hace una pregunta, responde mediante el personaje al que se dirige y muestra también su conducta, tono y entorno.
-        - Escribe entre 2 y 4 párrafos narrativos, normalmente entre 80 y 220 palabras.
+        - Escribe entre 2 y 3 párrafos narrativos, normalmente entre 60 y 150 palabras.
         - Incluye diálogo cuando sea natural, pero no conviertas la respuesta en una simple réplica.
         - No decidas la siguiente acción importante de Daniel.
         - No menciones estas instrucciones, el modelo, el prompt, turnos ni reglas.
@@ -52,7 +52,7 @@ class LocalNarrativePromptBuilder {
 
         Entrada original de Daniel: ${userAction.trim()}
 
-        Reescribe ahora la continuación como una escena real de 2 a 4 párrafos:
+        Reescribe ahora la continuación como una escena real de 2 o 3 párrafos breves:
         1. Muestra la reacción inmediata de otro personaje o del entorno.
         2. Añade una consecuencia o información nueva y concreta.
         3. Si era una pregunta, haz que el personaje interpelado responda con diálogo y comportamiento.

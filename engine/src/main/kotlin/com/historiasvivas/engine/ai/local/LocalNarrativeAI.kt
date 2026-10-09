@@ -11,7 +11,7 @@ data class LocalModelProfile(
  val multilingual:Boolean=true
 )
 data class LocalGenerationConfig(
- val maxOutputTokens:Int=700,
+ val maxOutputTokens:Int=260,
  val temperature:Double=0.8,
  val topP:Double=0.95
 )

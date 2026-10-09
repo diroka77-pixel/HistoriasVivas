@@ -17,12 +17,14 @@ class LlamaCppNarrativeRuntime(
         config: LocalGenerationConfig
     ): NarrativeResponse {
         val firstPrompt = promptBuilder.build(packet, userAction)
-        var prose = generateText(firstPrompt, config.maxOutputTokens)
+        var prose = cleanGeneratedText(generateText(firstPrompt, config.maxOutputTokens))
 
         if (isEchoOrTooShort(prose, userAction)) {
-            prose = generateText(
-                promptBuilder.retryAfterEcho(userAction),
-                config.maxOutputTokens
+            prose = cleanGeneratedText(
+                generateText(
+                    promptBuilder.retryAfterEcho(userAction),
+                    config.maxOutputTokens
+                )
             )
         }
 
@@ -40,8 +42,28 @@ class LlamaCppNarrativeRuntime(
         engine.sendUserPrompt(prompt, maxTokens)
             .toList()
             .joinToString("")
+
+    private fun cleanGeneratedText(value: String): String {
+        val withoutThinking = value
             .replace(Regex("(?s)<think>.*?</think>"), "")
             .trim()
+        if (withoutThinking.isBlank()) return ""
+
+        val sentences = withoutThinking.split(Regex("(?<=[.!?…])\\s+"))
+        val accepted = mutableListOf<String>()
+        val seen = mutableSetOf<String>()
+
+        for (sentence in sentences) {
+            val cleanSentence = sentence.trim()
+            val normalized = normalize(cleanSentence)
+            val wordCount = normalized.split(' ').count { it.isNotBlank() }
+
+            if (wordCount >= 6 && !seen.add(normalized)) break
+            if (cleanSentence.isNotBlank()) accepted += cleanSentence
+        }
+
+        return accepted.joinToString(" ").trim()
+    }
 
     private fun isEchoOrTooShort(prose: String, userAction: String): Boolean {
         val output = normalize(prose)
