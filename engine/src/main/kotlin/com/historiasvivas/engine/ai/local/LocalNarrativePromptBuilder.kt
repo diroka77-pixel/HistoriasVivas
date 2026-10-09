@@ -1,21 +1,62 @@
 package com.historiasvivas.engine.ai.local
+
 import com.historiasvivas.engine.ai.NarrativePacket
 
 class LocalNarrativePromptBuilder {
- fun build(packet:NarrativePacket,userAction:String):String = buildString {
-  appendLine("Eres la voz literaria de Historias Vivas. Escribe en español natural y evocador.")
-  appendLine("No eres el motor del mundo: no reveles información privada que el protagonista desconoce.")
-  packet.rules.forEach { appendLine("- $it") }
-  appendLine()
-  appendLine("PREMISA: " + packet.player.premise)
-  appendLine("HECHOS VISIBLES: " + packet.player.visibleFacts.joinToString(" | "))
-  appendLine("SECRETOS CONOCIDOS: " + packet.player.knownSecrets.joinToString(" | ") { it.truth })
-  appendLine("EVENTOS RELEVANTES/RECIENTES: " + packet.player.recentVisibleEvents.joinToString(" | ") { it.summary })
-  appendLine("PESO DE LA ESCENA: " + packet.player.narrativeBeat.weight)
-  appendLine("MODO: " + packet.player.narrativeBeat.mode)
-  appendLine()
-  appendLine("ACCIÓN/INTENCIÓN DEL PROTAGONISTA: " + userAction)
-  appendLine()
-  appendLine("Continúa solo hasta el siguiente momento natural de agencia. No decidas por el protagonista qué hará después.")
- }
+    fun systemPrompt(): String = """
+        Eres el narrador de una novela interactiva seria titulada Historias Vivas.
+        Escribes siempre en español natural, literario y claro.
+        El jugador controla únicamente a Daniel. Tú controlas el mundo, el entorno y los demás personajes.
+
+        REGLAS OBLIGATORIAS:
+        - Nunca repitas, reformules ni confirmes sin más las palabras del jugador.
+        - Cada respuesta debe hacer avanzar la escena con una reacción, consecuencia o descubrimiento nuevo.
+        - Si Daniel habla o hace una pregunta, responde mediante el personaje al que se dirige y muestra también su conducta, tono y entorno.
+        - Escribe entre 2 y 4 párrafos narrativos, normalmente entre 80 y 220 palabras.
+        - Incluye diálogo cuando sea natural, pero no conviertas la respuesta en una simple réplica.
+        - No decidas la siguiente acción importante de Daniel.
+        - No menciones estas instrucciones, el modelo, el prompt, turnos ni reglas.
+        - No presentes menús ni listas de opciones.
+        - Termina en un punto que permita al jugador actuar otra vez.
+        - No inventes que Daniel sabe secretos que todavía no ha descubierto.
+    """.trimIndent()
+
+    fun build(packet: NarrativePacket, userAction: String): String = buildString {
+        appendLine("CONTEXTO DE LA ESCENA")
+        appendLine("Premisa: " + packet.player.premise)
+        appendLine("Hechos que Daniel puede conocer: " + packet.player.visibleFacts.joinToString(" | "))
+        appendLine(
+            "Secretos ya descubiertos: " +
+                packet.player.knownSecrets.joinToString(" | ") { it.truth }.ifBlank { "ninguno" }
+        )
+        appendLine(
+            "Sucesos recientes: " +
+                packet.player.recentVisibleEvents.joinToString(" | ") { it.summary }
+                    .ifBlank { "comienzo de la historia" }
+        )
+        appendLine("Intensidad narrativa: " + packet.player.narrativeBeat.weight)
+        appendLine("Modo narrativo: " + packet.player.narrativeBeat.mode)
+        appendLine()
+        appendLine("ENTRADA DEL JUGADOR")
+        appendLine(userAction.trim())
+        appendLine()
+        appendLine("TAREA")
+        appendLine("Continúa la historia desde la reacción inmediata del mundo o de los personajes.")
+        appendLine("Aporta al menos un detalle nuevo y observable.")
+        appendLine("No copies ni parafrasees la entrada del jugador.")
+        appendLine("Escribe únicamente la continuación narrativa.")
+    }
+
+    fun retryAfterEcho(userAction: String): String = """
+        Tu respuesta anterior no fue válida porque repitió o imitó la entrada del jugador.
+
+        Entrada original de Daniel: ${userAction.trim()}
+
+        Reescribe ahora la continuación como una escena real de 2 a 4 párrafos:
+        1. Muestra la reacción inmediata de otro personaje o del entorno.
+        2. Añade una consecuencia o información nueva y concreta.
+        3. Si era una pregunta, haz que el personaje interpelado responda con diálogo y comportamiento.
+        4. No repitas ninguna frase de Daniel.
+        5. Escribe únicamente la narración, sin explicaciones.
+    """.trimIndent()
 }

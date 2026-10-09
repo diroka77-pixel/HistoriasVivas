@@ -16,6 +16,7 @@ import com.arm.aichat.InferenceEngine
 import com.arm.aichat.InferenceEngine.State
 import com.arm.aichat.isModelLoaded
 import com.historiasvivas.engine.ai.local.LocalNarrativeAI
+import com.historiasvivas.engine.ai.local.LocalNarrativePromptBuilder
 import com.historiasvivas.engine.manuscript.*
 import com.historiasvivas.engine.scenario.RuinsScenario
 import com.historiasvivas.engine.session.StorySession
@@ -242,7 +243,10 @@ class MainActivity : AppCompatActivity() {
 
         try {
             waitForEngineReady()
-            if (!engine.state.value.isModelLoaded) engine.loadModel(file.path)
+            if (!engine.state.value.isModelLoaded) {
+                engine.loadModel(file.path)
+                engine.setSystemPrompt(LocalNarrativePromptBuilder().systemPrompt())
+            }
 
             val ai = LocalNarrativeAI(LlamaCppNarrativeRuntime(engine))
             val saveFile = File(filesDir, "nadir-story.json")

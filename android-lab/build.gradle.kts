@@ -1,6 +1,6 @@
 plugins { id("com.android.application"); kotlin("android") }
 android { namespace="com.historiasvivas.lab"; compileSdk=36
- defaultConfig { applicationId="com.historiasvivas.lab"; minSdk=33; targetSdk=36; versionCode=4; versionName="0.1.3" }
+ defaultConfig { applicationId="com.historiasvivas.lab"; minSdk=33; targetSdk=36; versionCode=5; versionName="0.1.4" }
  packaging { jniLibs { useLegacyPackaging = true } }
  compileOptions { sourceCompatibility=JavaVersion.VERSION_17; targetCompatibility=JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget="17" }
