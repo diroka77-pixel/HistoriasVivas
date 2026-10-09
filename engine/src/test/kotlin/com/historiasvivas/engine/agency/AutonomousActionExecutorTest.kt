@@ -118,6 +118,7 @@ class AutonomousActionExecutorTest {
   assertEquals(setOf("h"),after.world.reasoning.hypotheses.keys)
   assertTrue(after.world.socialKnowledge.testimonies.isNotEmpty())
   assertTrue(after.world.socialKnowledge.heardClaims.values.any{it.listenerId=="elena"})
+  assertEquals(setOf("erik","elena"),result.eventWitnessIds)
  }
  @Test fun warningCannotTransferKnowledgeToAbsentListener(){
   val erik=Character("erik","Erik")
