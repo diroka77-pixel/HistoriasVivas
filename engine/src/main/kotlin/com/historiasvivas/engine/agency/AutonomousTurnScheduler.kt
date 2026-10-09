@@ -10,12 +10,28 @@ data class AutonomousCycle(
  val results:List<AutonomousActionResult> = emptyList()
 )
 
+class AutonomousActionHistory {
+ fun materialize(
+  plan:AutonomousActionPlan,
+  result:AutonomousActionResult
+ ):HiddenEvent? = result.event?.let{event->
+  HiddenEvent(
+   id="hidden-"+event.id,
+   turn=event.turn,
+   actorId=plan.characterId,
+   summary=event.summary,
+   knownBy=result.eventWitnessIds+plan.characterId
+  )
+ }
+}
+
 class AutonomousTurnScheduler(
  private val reasoning:AutonomousReasoningEngine=AutonomousReasoningEngine(),
  private val planner:HypothesisAgencyEngine=HypothesisAgencyEngine(),
  private val executor:AutonomousActionExecutor=AutonomousActionExecutor(),
  private val spatial:SpatialEngine=SpatialEngine(),
  private val signalGenerator:AutonomousActionSignalGenerator=AutonomousActionSignalGenerator(),
+ private val history:AutonomousActionHistory=AutonomousActionHistory(),
  private val cooldownTurns:Long=3
 ){
  fun run(story:Story,presentCharacterIds:Set<String>,maxCharacters:Int=1):Pair<Story,AutonomousCycle>{
@@ -43,7 +59,7 @@ class AutonomousTurnScheduler(
    )))
    val plan=planner.plan(current,character.id,inference.hypothesis)?:return@forEach
    val (after,result)=executor.execute(current,plan)
-   val actionHistory=result.event?.let{event-> HiddenEvent(id="hidden-"+event.id,turn=event.turn,actorId=plan.characterId,summary=event.summary) }
+   val actionHistory=history.materialize(plan,result)
    val generatedSignal=signalGenerator.generate(after,plan,result)
    val discovery=generatedSignal?.let{signal->
     after.world.discovery.copy(signals=after.world.discovery.signals+(signal.id to signal))
