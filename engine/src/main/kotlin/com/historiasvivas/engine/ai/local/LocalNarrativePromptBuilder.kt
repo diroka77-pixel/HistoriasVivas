@@ -34,7 +34,6 @@ class LocalNarrativePromptBuilder {
                 packet.player.recentVisibleEvents.joinToString(" | ") { it.summary }
                     .ifBlank { "comienzo de la historia" }
         )
-        appendLine("Acontecimientos descubiertos: " + packet.player.knownHiddenEvents.takeLast(5).joinToString(" | ") { it.toString().take(160) }.ifBlank { "ninguno" })
         appendLine("Intensidad narrativa: " + packet.player.narrativeBeat.weight)
         appendLine("Modo narrativo: " + packet.player.narrativeBeat.mode)
         appendLine()
