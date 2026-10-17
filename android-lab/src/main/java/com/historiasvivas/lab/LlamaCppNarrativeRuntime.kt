@@ -3,6 +3,7 @@ package com.historiasvivas.lab
 import com.arm.aichat.InferenceEngine
 import com.historiasvivas.engine.ai.*
 import com.historiasvivas.engine.ai.local.*
+import com.historiasvivas.engine.manuscript.StoryManuscript
 import kotlinx.coroutines.flow.toList
 import java.text.Normalizer
 import java.util.Locale
@@ -13,6 +14,15 @@ class LlamaCppNarrativeRuntime(
 ) : LocalInferenceRuntime {
     private val recentResponses = ArrayDeque<String>()
     private var lastNarrativeExcerpt: String = ""
+    fun restoreHistory(manuscript: StoryManuscript) {
+        recentResponses.clear()
+        manuscript.entries.takeLast(8).forEach { entry ->
+            val normalized = normalize(entry.prose)
+            if (normalized.isNotBlank()) recentResponses.addLast(normalized)
+        }
+        lastNarrativeExcerpt = manuscript.entries.lastOrNull()?.prose?.takeLast(900).orEmpty()
+    }
+
     override suspend fun generate(
         packet: NarrativePacket,
         userAction: String,
