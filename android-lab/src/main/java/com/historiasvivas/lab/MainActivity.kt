@@ -291,7 +291,8 @@ class MainActivity : AppCompatActivity() {
                 engine.setSystemPrompt(LocalNarrativePromptBuilder().systemPrompt())
             }
 
-            val ai = LocalNarrativeAI(LlamaCppNarrativeRuntime(engine))
+            val runtime = LlamaCppNarrativeRuntime(engine)
+            val ai = LocalNarrativeAI(runtime)
             val saveFile = File(filesDir, "nadir-story.json")
             session = if (saveFile.exists()) {
                 StorySession.resume(saveFile.readText(), ai)
@@ -305,6 +306,8 @@ class MainActivity : AppCompatActivity() {
             } else {
                 StoryManuscript(session!!.story.id, session!!.story.title)
             }
+
+            runtime.restoreHistory(manuscript!!)
 
             withContext(Dispatchers.Main) {
                 status.text = "Narrador local preparado · modelo guardado"
