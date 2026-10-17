@@ -378,7 +378,9 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (t: Throwable) {
                 withContext(Dispatchers.Main) {
-                    metrics.text = "Error local: " + (t.message ?: "desconocido")
+                    metrics.text = "Error local: " + (t.message ?: "desconocido") + " · puedes reintentar" 
+                    action.setText(userAction)
+                    action.setSelection(action.text.length)
                 }
             } finally {
                 withContext(Dispatchers.Main) { send.isEnabled = true }
