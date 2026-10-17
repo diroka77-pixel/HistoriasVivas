@@ -40,6 +40,8 @@ class LocalNarrativePromptBuilder {
         appendLine("ENTRADA DEL JUGADOR")
         appendLine(userAction.trim())
         appendLine()
+        appendLine("La acción anterior y sus consecuencias deben respetarse; no reinicies la escena.")
+        appendLine("La nueva intervención del jugador tiene prioridad sobre cualquier ejemplo previo.")
         appendLine("TAREA")
         appendLine("Continúa la historia desde la reacción inmediata del mundo o de los personajes.")
         appendLine("Aporta al menos un detalle nuevo y observable.")
