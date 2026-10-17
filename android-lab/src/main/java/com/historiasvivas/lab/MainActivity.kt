@@ -1,5 +1,9 @@
 package com.historiasvivas.lab
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.text.InputType
+import androidx.appcompat.app.AlertDialog
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -68,7 +72,8 @@ class MainActivity : AppCompatActivity() {
         }
         send.setOnClickListener { playTurn() }
 
-        lifecycleScope.launch {
+        showPasswordGate {
+            lifecycleScope.launch {
             try {
                 engine = withContext(Dispatchers.Default) {
                     AiChat.getInferenceEngine(applicationContext)
@@ -80,7 +85,45 @@ class MainActivity : AppCompatActivity() {
             } catch (t: Throwable) {
                 showLoadError(t)
             }
+            }
         }
+    }
+
+    private fun showPasswordGate(onSuccess: () -> Unit) {
+        val password = EditText(this).apply {
+            hint = "Contraseña"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.LTGRAY)
+            setSingleLine(true)
+            setPadding(32, 24, 32, 24)
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(40, 24, 40, 16)
+            setBackgroundColor(Color.BLACK)
+            addView(password)
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Historias Vivas · Acceso")
+            .setView(container)
+            .setCancelable(false)
+            .setPositiveButton("Entrar", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.BLACK))
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.WHITE)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
+                if (password.text.toString() == "MATRIX") {
+                    dialog.dismiss()
+                    onSuccess()
+                } else {
+                    dialog.dismiss()
+                    finishAffinity()
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun applySafeAreaInsets() {
