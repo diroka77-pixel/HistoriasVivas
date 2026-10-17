@@ -34,6 +34,7 @@ class LocalNarrativePromptBuilder {
                 packet.player.recentVisibleEvents.joinToString(" | ") { it.summary }
                     .ifBlank { "comienzo de la historia" }
         )
+        appendLine("Acontecimientos descubiertos: " + packet.player.knownHiddenEvents.takeLast(5).joinToString(" | ") { it.toString().take(160) }.ifBlank { "ninguno" })
         appendLine("Intensidad narrativa: " + packet.player.narrativeBeat.weight)
         appendLine("Modo narrativo: " + packet.player.narrativeBeat.mode)
         appendLine()
@@ -42,6 +43,8 @@ class LocalNarrativePromptBuilder {
         appendLine()
         appendLine("La acción anterior y sus consecuencias deben respetarse; no reinicies la escena.")
         appendLine("La nueva intervención del jugador tiene prioridad sobre cualquier ejemplo previo.")
+        appendLine("Si el jugador cambia de tema, lugar u objetivo, responde a ese cambio sin repetir la escena anterior.")
+        appendLine("Si no conoces una respuesta, permite que el personaje lo admita o investigue; no inventes conocimientos.")
         appendLine("TAREA")
         appendLine("Continúa la historia desde la reacción inmediata del mundo o de los personajes.")
         appendLine("Aporta al menos un detalle nuevo y observable.")
