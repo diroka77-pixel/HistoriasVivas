@@ -1,9 +1,9 @@
 package com.historiasvivas.engine
 
 import com.historiasvivas.engine.ai.local.LocalNarrativePromptBuilder
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class LocalNarrativePromptBuilderTest {
     private val builder = LocalNarrativePromptBuilder()
