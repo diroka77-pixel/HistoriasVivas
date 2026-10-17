@@ -11,6 +11,7 @@ class LlamaCppNarrativeRuntime(
     private val engine: InferenceEngine,
     private val promptBuilder: LocalNarrativePromptBuilder = LocalNarrativePromptBuilder()
 ) : LocalInferenceRuntime {
+    private val recentResponses = ArrayDeque<String>()
     override suspend fun generate(
         packet: NarrativePacket,
         userAction: String,
@@ -19,19 +20,23 @@ class LlamaCppNarrativeRuntime(
         val firstPrompt = promptBuilder.build(packet, userAction)
         var prose = cleanGeneratedText(generateText(firstPrompt, config.maxOutputTokens))
 
-        if (isEchoOrTooShort(prose, userAction)) {
+        if (isEchoOrTooShort(prose, userAction) || wasRecentlyUsed(prose)) {
             prose = cleanGeneratedText(
                 generateText(
-                    promptBuilder.retryAfterEcho(userAction),
+                    promptBuilder.build(packet, userAction) + "\n\nATENCIÓN: la respuesta anterior fue repetitiva o insuficiente. Genera una continuación DIFERENTE, basada en esta acción y los hechos actuales. No reutilices frases anteriores.",
                     config.maxOutputTokens
                 )
             )
         }
 
+        if (isEchoOrTooShort(prose, userAction) || wasRecentlyUsed(prose)) {
+            throw IllegalStateException("El narrador no ha generado una continuación válida. Vuelve a intentarlo; el turno no se guardará.")
+        }
+        recentResponses.addLast(normalize(prose))
+        while (recentResponses.size > 8) recentResponses.removeFirst()
+
         return NarrativeResponse(
-            prose = prose.ifBlank {
-                "Durante unos segundos nadie responde. Entonces, un sonido profundo recorre las estructuras de Nadir y obliga a todos a mirar hacia las ruinas del norte. Algo acaba de cambiar."
-            },
+            prose = prose,
             eventSummary = "Daniel actuó: " + userAction.take(180),
             participantIds = setOf(packet.player.protagonistId),
             tags = setOf("local-narrative")
@@ -63,6 +68,16 @@ class LlamaCppNarrativeRuntime(
         }
 
         return accepted.joinToString(" ").trim()
+    }
+
+    private fun wasRecentlyUsed(prose: String): Boolean {
+        val candidate = normalize(prose)
+        if (candidate.isBlank()) return true
+        return recentResponses.any { previous ->
+            candidate == previous ||
+                (candidate.length > 90 && previous.length > 90 &&
+                    (candidate.contains(previous) || previous.contains(candidate)))
+        }
     }
 
     private fun isEchoOrTooShort(prose: String, userAction: String): Boolean {
