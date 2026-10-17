@@ -44,6 +44,8 @@ class LocalNarrativePromptBuilder {
         appendLine("La nueva intervención del jugador tiene prioridad sobre cualquier ejemplo previo.")
         appendLine("Si el jugador cambia de tema, lugar u objetivo, responde a ese cambio sin repetir la escena anterior.")
         appendLine("Si no conoces una respuesta, permite que el personaje lo admita o investigue; no inventes conocimientos.")
+        appendLine("No atribuyas al protagonista acciones que no haya elegido.")
+        appendLine("Evita reiniciar la historia o volver a presentar el mismo descubrimiento.")
         appendLine("TAREA")
         appendLine("Continúa la historia desde la reacción inmediata del mundo o de los personajes.")
         appendLine("Aporta al menos un detalle nuevo y observable.")
