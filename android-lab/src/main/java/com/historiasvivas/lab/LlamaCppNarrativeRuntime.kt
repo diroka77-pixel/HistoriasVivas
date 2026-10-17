@@ -12,18 +12,22 @@ class LlamaCppNarrativeRuntime(
     private val promptBuilder: LocalNarrativePromptBuilder = LocalNarrativePromptBuilder()
 ) : LocalInferenceRuntime {
     private val recentResponses = ArrayDeque<String>()
+    private var lastNarrativeExcerpt: String = ""
     override suspend fun generate(
         packet: NarrativePacket,
         userAction: String,
         config: LocalGenerationConfig
     ): NarrativeResponse {
-        val firstPrompt = promptBuilder.build(packet, userAction)
+        val firstPrompt = promptBuilder.build(packet, userAction) +
+            if (lastNarrativeExcerpt.isBlank()) "" else
+                "\nÚLTIMA CONTINUACIÓN (solo para mantener continuidad, NO la repitas):\n" +
+                    lastNarrativeExcerpt + "\n"
         var prose = cleanGeneratedText(generateText(firstPrompt, config.maxOutputTokens))
 
         if (isEchoOrTooShort(prose, userAction) || wasRecentlyUsed(prose)) {
             prose = cleanGeneratedText(
                 generateText(
-                    promptBuilder.build(packet, userAction) + "\n\nATENCIÓN: la respuesta anterior fue repetitiva o insuficiente. Genera una continuación DIFERENTE, basada en esta acción y los hechos actuales. No reutilices frases anteriores.",
+                    firstPrompt + "\n\nATENCIÓN: la respuesta anterior fue repetitiva o insuficiente. Genera una continuación DIFERENTE, basada en esta acción y los hechos actuales. No reutilices frases anteriores.",
                     config.maxOutputTokens
                 )
             )
@@ -32,6 +36,7 @@ class LlamaCppNarrativeRuntime(
         if (isEchoOrTooShort(prose, userAction) || wasRecentlyUsed(prose)) {
             throw IllegalStateException("El narrador no ha generado una continuación válida. Vuelve a intentarlo; el turno no se guardará.")
         }
+        lastNarrativeExcerpt = prose.takeLast(900)
         recentResponses.addLast(normalize(prose))
         while (recentResponses.size > 8) recentResponses.removeFirst()
 
