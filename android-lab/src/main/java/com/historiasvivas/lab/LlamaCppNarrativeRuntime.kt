@@ -37,7 +37,7 @@ class LlamaCppNarrativeRuntime(
         if (isEchoOrTooShort(prose, userAction) || wasRecentlyUsed(prose)) {
             prose = cleanGeneratedText(
                 generateText(
-                    firstPrompt + "\n\nATENCIÓN: la respuesta anterior fue repetitiva o insuficiente. Genera una continuación DIFERENTE, basada en esta acción y los hechos actuales. No reutilices frases anteriores.",
+                    firstPrompt + "\n\n" + promptBuilder.retryAfterEcho(userAction) + "\nEvita este texto fallido: " + prose.take(350),
                     config.maxOutputTokens
                 )
             )
@@ -91,8 +91,18 @@ class LlamaCppNarrativeRuntime(
         return recentResponses.any { previous ->
             candidate == previous ||
                 (candidate.length > 90 && previous.length > 90 &&
-                    (candidate.contains(previous) || previous.contains(candidate)))
+                    (candidate.contains(previous) || previous.contains(candidate))) ||
+                (candidate.length > 100 && previous.length > 100 &&
+                    sharedWordSequence(candidate, previous, 16))
         }
+    }
+
+    private fun sharedWordSequence(a: String, b: String, window: Int): Boolean {
+        val first = a.split(' ')
+        val second = b.split(' ')
+        if (first.size < window || second.size < window) return false
+        val phrases = first.windowed(window).map { it.joinToString(" ") }.toHashSet()
+        return second.windowed(window).any { it.joinToString(" ") in phrases }
     }
 
     private fun isEchoOrTooShort(prose: String, userAction: String): Boolean {
